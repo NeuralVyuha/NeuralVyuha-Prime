@@ -1,0 +1,107 @@
+<div class="nv-dashboard" role="main" aria-label="NeuralVyuha Cases">
+    <div class="nv-welcome-banner" role="banner">
+        <div class="nv-welcome-content">
+            <h1 class="nv-welcome-title">
+                <i class="fa fa-briefcase"></i> Active Cases
+            </h1>
+            <p class="nv-welcome-subtitle">Manage ongoing investigations and escalated incidents.</p>
+        </div>
+    </div>
+    <div class="nv-error-banner" ng-if="vm.error" role="alert">
+        <i class="fa fa-exclamation-circle"></i>
+        <span>{{vm.error}}</span>
+        <button class="nv-retry-btn" ng-click="vm.retry()" aria-label="Retry">
+            <i class="fa fa-refresh"></i> Retry
+        </button>
+    </div>
+    <div class="row nv-main-row">
+        <div class="col-md-12">
+            <div class="nv-panel nv-panel-glass">
+                <div class="nv-panel-header">
+                    <h3 class="nv-panel-title"><i class="fa fa-list"></i> Cases Directory</h3>
+                    <div class="nv-panel-actions">
+                        <div class="btn-group btn-group-sm nv-filter-group">
+                            <button class="btn nv-filter-btn"
+                                ng-class="{'nv-filter-active': vm.params.status === 'Open'}"
+                                ng-click="vm.filterStatus('Open')">Open</button>
+                            <button class="btn nv-filter-btn"
+                                ng-class="{'nv-filter-active': vm.params.status === 'Resolved'}"
+                                ng-click="vm.filterStatus('Resolved')">Resolved</button>
+                            <button class="btn nv-filter-btn" ng-class="{'nv-filter-active': !vm.params.status}"
+                                ng-click="vm.filterStatus(null)">All</button>
+                        </div>
+                        <button class="btn btn-sm btn-primary" style="margin-left:10px;" ng-click="vm.createCase()">
+                            <i class="fa fa-plus"></i> New Case
+                        </button>
+                        <button class="btn btn-sm nv-refresh-btn" ng-click="vm.load()">
+                            <i class="fa fa-refresh" ng-class="{'fa-spin': vm.loading}"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="nv-panel-body">
+                    <div ng-if="vm.loading" class="nv-skeleton-container">
+                        <div class="nv-skeleton-row" ng-repeat="i in [1,2,3,4,5]">
+                            <div class="nv-skeleton nv-skeleton-id"></div>
+                            <div class="nv-skeleton nv-skeleton-text"></div>
+                            <div class="nv-skeleton nv-skeleton-badge"></div>
+                            <div class="nv-skeleton nv-skeleton-label"></div>
+                            <div class="nv-skeleton nv-skeleton-status"></div>
+                        </div>
+                    </div>
+                    <table class="table table-hover nv-table" ng-if="!vm.loading">
+                        <thead>
+                            <tr>
+                                <th>Case ID</th>
+                                <th>Title</th>
+                                <th>Severity</th>
+                                <th>TLP</th>
+                                <th>Owner</th>
+                                <th>Date</th>
+                                <th style="width: 120px; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="c in vm.cases" class="nv-table-row" ng-click="vm.openCase(c)">
+                                <td><code class="nv-id-badge">#{{::c.case_number || c.number}}</code></td>
+                                <td><strong>{{::c.title}}</strong></td>
+                                <td><span class="label nv-severity"
+                                        ng-class="vm.getSeverityClass(c.severity)">{{vm.getSeverityLabel(c.severity)}}</span>
+                                </td>
+                                <td><span class="label"
+                                        ng-class="vm.getTlpClass(c.tlp)">{{vm.getTlpLabel(c.tlp)}}</span></td>
+                                <td><span class="nv-status-label" style="text-transform: none;"><i
+                                            class="fa fa-user"></i> {{::c.owner || 'Unassigned'}}</span></td>
+                                <td><span class="nv-timestamp">{{::c.createdAt | date:'medium'}}</span></td>
+                                <td ng-click="$event.stopPropagation()" style="text-align: center;">
+                                    <div class="nv-row-actions">
+                                        <a class="nv-action-btn" ng-click="vm.investigateCase(c)"
+                                            uib-tooltip="AI Analyst: Investigate"
+                                            style="color: #10b981; font-size: 16px;">
+                                            <i class="fa fa-magic"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr ng-if="vm.cases.length === 0">
+                                <td colspan="7" class="nv-empty-state">
+                                    <p>No cases found.</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="nv-panel-footer" ng-if="vm.total > vm.params.limit">
+                    <span class="nv-page-info">Showing {{vm.cases.length}} of {{vm.total}} cases</span>
+                    <div class="nv-pagination">
+                        <button class="btn btn-sm nv-page-btn" ng-click="vm.prevPage()"
+                            ng-disabled="vm.params.offset === 0"><i class="fa fa-chevron-left"></i></button>
+                        <span class="nv-page-number">{{vm.getCurrentPage()}} / {{vm.getTotalPages()}}</span>
+                        <button class="btn btn-sm nv-page-btn" ng-click="vm.nextPage()"
+                            ng-disabled="vm.params.offset + vm.params.limit >= vm.total"><i
+                                class="fa fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

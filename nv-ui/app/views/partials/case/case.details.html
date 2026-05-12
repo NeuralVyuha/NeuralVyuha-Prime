@@ -1,0 +1,198 @@
+<div class="case-details-classic" data-nv-marker="NV_UNIQUE_MARKER">
+    <div class="row">
+        <!-- Main Content (Left) -->
+        <div class="col-md-9">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Case Summary</h3>
+                </div>
+                <div class="panel-body">
+                    <h2>
+                        <updatable-simple-text ng-if="canEdit" on-update="updateField('title', newValue)"
+                            value="caze.title"></updatable-simple-text>
+                        <span ng-if="!canEdit">{{caze.title}}</span>
+                    </h2>
+                    <br>
+                    <div class="description-area hpad5">
+                        <div class="description-content" ng-if="canEdit">
+                            <updatable-text on-update="updateField('description', newValue)"
+                                value="caze.description"></updatable-text>
+                        </div>
+                        <div class="description-content markdown" ng-if="!canEdit" marked="caze.description"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Intelligence Metadata</h3>
+                </div>
+                <div class="panel-body">
+                    <ng-include src="'views/partials/case/details/custom.fields.html'"></ng-include>
+                </div>
+            </div>
+
+            <!-- Unified Timeline -->
+            <div class="panel panel-default" ng-if="nvTimeline && nvTimeline.length > 0">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Unified Event Timeline</h3>
+                </div>
+                <div class="panel-body">
+                    <ul class="timeline">
+                        <li ng-repeat="item in nvTimeline">
+                            <i class="fa bg-blue"
+                                ng-class="{'fa-envelope': item.type == 'note', 'fa-tasks': item.type == 'task', 'fa-link': item.type == 'link'}"></i>
+                            <div class="timeline-item">
+                                <span class="time"><i class="fa fa-clock-o"></i> {{item.ts | date:'shortTime'}}</span>
+                                <h3 class="timeline-header no-border">
+                                    <span ng-if="item.type == 'task'">Task: {{item.title}}</span>
+                                    <span ng-if="item.type == 'note'">Note by {{item.user}}</span>
+                                    <span ng-if="item.type == 'link'">Linked Alert: {{item.alert_id}}</span>
+                                </h3>
+                                <div class="timeline-body" ng-if="item.body">
+                                    <div marked="item.body" class="markdown"></div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Details (Right) -->
+        <div class="col-md-3">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Details</h3>
+                </div>
+                <!-- Remove horizontal dl styling to allow stacked wrapping, standard for narrow sidebars -->
+                <div class="panel-body">
+                    <dl class="bm15">
+                        <dt>Status</dt>
+                        <dd>
+                            <div class="dropdown" uib-dropdown ng-if="canEdit">
+                                <a href class="dropdown-toggle noline" uib-dropdown-toggle style="font-size: 14px;">
+                                    <span class="label"
+                                        ng-class="{'label-info': caze.status === 'Open', 'label-warning': caze.status === 'InProgress', 'label-success': caze.status === 'Resolved'}">
+                                        <i class="fa"
+                                            ng-class="{'fa-folder-open': caze.status === 'Open', 'fa-refresh': caze.status === 'InProgress', 'fa-check': caze.status === 'Resolved'}"></i>
+                                        {{caze.status}}
+                                    </span>
+                                    <i class="fa fa-caret-down text-muted"></i>
+                                </a>
+                                <ul class="dropdown-menu" uib-dropdown-menu role="menu">
+                                    <li ng-if="caze.status !== 'Open'">
+                                        <a href ng-click="updateField('status', 'Open')"><i
+                                                class="fa fa-folder-open text-info"></i> Mark as Open</a>
+                                    </li>
+                                    <li ng-if="caze.status !== 'InProgress'">
+                                        <a href ng-click="updateField('status', 'InProgress')"><i
+                                                class="fa fa-refresh text-warning"></i> Mark as In Progress</a>
+                                    </li>
+                                    <li ng-if="caze.status !== 'Resolved'">
+                                        <a href ng-click="openCloseDialog()"><i class="fa fa-check text-success"></i>
+                                            Resolve Case...</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <span class="label" ng-if="!canEdit"
+                                ng-class="{'label-info': caze.status === 'Open', 'label-warning': caze.status === 'InProgress', 'label-success': caze.status === 'Resolved'}">
+                                <i class="fa"
+                                    ng-class="{'fa-folder-open': caze.status === 'Open', 'fa-refresh': caze.status === 'InProgress', 'fa-check': caze.status === 'Resolved'}"></i>
+                                {{caze.status}}
+                            </span>
+                        </dd>
+                    </dl>
+                    <dl class="bm15">
+                        <dt>Assignee</dt>
+                        <dd>
+                            <updatable-user ng-if="canEdit" on-update="updateField('owner', newValue)"
+                                value="caze.assignee" query="assignableUsersQuery" />
+                            <user-info ng-if="!canEdit" value="caze.assignee" field="name"></user-info>
+                        </dd>
+                    </dl>
+                    <dl class="bm15">
+                        <dt>Created By</dt>
+                        <dd>
+                            <user-info value="caze.createdBy" field="name"></user-info>
+                        </dd>
+                    </dl>
+                    <dl class="bm15">
+                        <dt>Date</dt>
+                        <dd>{{caze.startDate | shortDate}}</dd>
+                    </dl>
+                    <hr>
+                    <dl class="bm15">
+                        <dt>Severity</dt>
+                        <dd>
+                            <a class="noline" href ng-if="canEdit" ng-click="activeSev = true"
+                                ng-init="activeSev = false">
+                                <severity active="activeSev" on-update="updateField('severity', newValue)"
+                                    value="caze.severity"></severity>
+                            </a>
+                            <severity ng-if="!canEdit" active="false" value="caze.severity"></severity>
+                        </dd>
+                    </dl>
+                    <dl class="bm15">
+                        <dt>TLP</dt>
+                        <dd>
+                            <a class="noline" href ng-if="canEdit" ng-click="activeTlp = 'active'"
+                                ng-init="activeTlp = 'static'">
+                                <tlp format="activeTlp" on-update="updateField('tlp', newValue)" value="caze.tlp"></tlp>
+                            </a>
+                            <tlp ng-if="!canEdit" format="'static'" value="caze.tlp"></tlp>
+                        </dd>
+                    </dl>
+                    <dl class="bm15">
+                        <dt>PAP</dt>
+                        <dd>
+                            <a class="noline" href ng-if="canEdit" ng-click="activePap = 'active'"
+                                ng-init="activePap = 'static'">
+                                <tlp format="activePap" on-update="updateField('pap', newValue)" value="caze.pap"
+                                    namespace="PAP"></tlp>
+                            </a>
+                            <tlp ng-if="!canEdit" format="'static'" value="caze.pap" namespace="PAP"></tlp>
+                        </dd>
+                    </dl>
+                    <dl class="bm15">
+                        <dt>Tags</dt>
+                        <dd>
+                            <updatable-tag-list ng-if="canEdit" on-update="updateField('tags', getTags(newValue))"
+                                value="caze.tags" source="getCaseTags"></updatable-tag-list>
+                            <tag-list ng-if="!canEdit" data="caze.tags"></tag-list>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Linked Incidents</h3>
+                </div>
+                <div class="panel-body">
+                    <ng-include src="'views/partials/case/details/related.cases.html'"></ng-include>
+                </div>
+            </div>
+
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Knowledge Graph</h3>
+                </div>
+                <div class="panel-body">
+                    <a ui-sref="app.graph({caseId: caseId})" class="btn btn-default btn-block">
+                        <i class="fa fa-sitemap"></i> Open Vyuha Graph
+                    </a>
+                </div>
+            </div>
+
+            <div class="panel panel-default" ng-if="actions.values.length">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Automation Actions</h3>
+                </div>
+                <div class="panel-body">
+                    <responder-actions actions="actions"></responder-actions>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

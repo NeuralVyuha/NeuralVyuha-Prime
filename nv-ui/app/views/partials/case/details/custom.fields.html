@@ -1,0 +1,66 @@
+<div class="case-custom-fields" ng-controller="CaseCustomFieldsCtrl">
+    <div class="clearfix bm15" style="border-bottom: 2px solid #eef2f5; padding-bottom: 10px;">
+        <h4 class="pull-left tm0 bm0" style="color: #2c3e50; font-weight: 600; font-size: 16px;">
+            <i class="fa fa-braille text-muted"></i> Additional Information
+        </h4>
+        <div class="pull-right">
+            <div class="btn-group" uib-dropdown ng-if="canEdit && customFieldsAvailable">
+                <button type="button" class="btn btn-sm btn-primary" uib-dropdown-toggle
+                    style="border-radius: 4px; padding: 4px 12px; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <i class="fa fa-plus"></i> Add Field <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-right scroll-dropdown" uib-dropdown-menu>
+                    <li class="dropdown-header">Available Metadata</li>
+                    <li ng-repeat="key in keys(allCustomFields) | orderBy">
+                        <a ng-click="addCustomField(allCustomFields[key])" href>
+                            <i class="fa fa-tag text-muted bm5"></i> {{allCustomFields[key].name}}
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="btn-group ml-m" uib-dropdown>
+                <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle
+                    style="border-radius: 4px; padding: 4px 10px; border-color: #d2d6de; background: #fff;">
+                    <i class="fa fa-columns text-muted"></i> <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-right" uib-dropdown-menu>
+                    <li class="dropdown-header">View Layout</li>
+                    <li ng-class="{'active': appLayout.caseCustomFieldColumns === 1}">
+                        <a ng-click="layoutSrv.caseCustomFields(1)" href><i class="fa fa-align-justify"></i> 1
+                            Column</a>
+                    </li>
+                    <li ng-class="{'active': appLayout.caseCustomFieldColumns === 2}">
+                        <a ng-click="layoutSrv.caseCustomFields(2)" href><i class="fa fa-th-large"></i> 2 Columns</a>
+                    </li>
+                    <li ng-class="{'active': appLayout.caseCustomFieldColumns === 3}">
+                        <a ng-click="layoutSrv.caseCustomFields(3)" href><i class="fa fa-th"></i> 3 Columns</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div ng-if="caze.customFields.length === 0" class="text-center pad20"
+        style="background: #f8fafc; border: 1px dashed #ced4da; border-radius: 6px; margin-top: 20px;">
+        <i class="fa fa-folder-open-o" style="font-size: 32px; color: #adb5bd; margin-bottom: 10px;"></i>
+        <h5 style="color: #6c757d; font-weight: 500; margin-top: 0;">No Intelligence Metadata</h5>
+        <p class="text-muted" style="font-size: 12px;" ng-if="canEdit">Click the Add Field button above to enrich this
+            case.</p>
+    </div>
+
+    <div class="row">
+        <div ng-repeat="customField in (caze.customFields | orderBy:'order') track by $index">
+            <div class="clearfix" ng-if="$index % (appLayout.caseCustomFieldColumns || 3) == 0"></div>
+            <div class="{{'col-xs-' + (12/(appLayout.caseCustomFieldColumns || 3))}}">
+                <div
+                    style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 15px; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.2s ease;">
+                    <custom-field-input index="$index" editable="canEdit" removable="canEdit"
+                        field="customFieldsCache[customField.name]" on-update="updateField(fieldName, value)"
+                        on-remove="removeField(fieldId)" value="customField.value"
+                        id="customField._id"></custom-field-input>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

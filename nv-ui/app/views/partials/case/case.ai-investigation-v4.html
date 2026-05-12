@@ -1,0 +1,77 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <i class="fa fa-magic"></i>
+                <h3 class="box-title text-primary">AI Case Investigation History</h3>
+                <div class="box-tools pull-right">
+                    <button class="btn btn-sm btn-success" ng-click="runNewInvestigation()" uib-tooltip="Run new AI Analysis">
+                        <i class="fa fa-play"></i> New Investigation
+                    </button>
+                    <button class="btn btn-box-tool" ng-click="loadInvestigations()" uib-tooltip="Refresh History">
+                        <i class="fa fa-refresh"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="box-body">
+                <div ng-show="loading" class="text-center p-xl">
+                    <i class="fa fa-refresh fa-spin fa-2x"></i>
+                    <p class="mt-xs">Fetching investigation logs...</p>
+                </div>
+
+                <div ng-show="!loading && investigations.length === 0" class="text-center p-xl">
+                    <p class="text-muted">No AI investigations have been saved for this case yet.</p>
+                    <p>Click "New Investigation" to start an AI analyst review.</p>
+                </div>
+
+                <div ng-show="!loading && investigations.length > 0">
+                    <div class="panel-group">
+                        <div class="panel panel-default" ng-repeat="inv in investigations">
+                            <div class="panel-heading" role="tab" ng-click="inv.isExpanded = !inv.isExpanded" style="cursor: pointer;">
+                                <h4 class="panel-title" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                    <div style="flex: 1;">
+                                        <span class="text-primary">
+                                            <i class="fa" ng-class="inv.isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                                            <i class="fa fa-calendar ml-sm"></i> {{inv.created_at | shortDate}} - 
+                                            <strong>{{inv.model_provider | capitalize}} ({{inv.model_name}})</strong>
+                                        </span>
+                                    </div>
+                                    <div class="pull-right" style="flex-shrink: 0;" ng-click="$event.stopPropagation()">
+                                        <span class="btn-group btn-group-xs mr-sm" style="opacity: 0.9;">
+                                            <button class="btn btn-default" ng-class="{'btn-success': inv.rating === 1, 'text-success': inv.rating === 1}" 
+                                                    ng-click="rateInvestigation(inv, 1, $event)" uib-tooltip="Helpful">
+                                                <i class="fa fa-thumbs-up"></i>
+                                            </button>
+                                            <button class="btn btn-default" ng-class="{'btn-danger': inv.rating === -1, 'text-danger': inv.rating === -1}" 
+                                                    ng-click="rateInvestigation(inv, -1, $event)" uib-tooltip="Not Helpful">
+                                                <i class="fa fa-thumbs-down"></i>
+                                            </button>
+                                        </span>
+                                        <span class="text-muted small">ID: {{inv.id | limitTo:8}}...</span>
+                                    </div>
+                                </h4>
+                            </div>
+                            <div class="panel-collapse" ng-show="inv.isExpanded || ($first && inv.isExpanded !== false)">
+                                <div class="panel-body">
+                                    <div class="well well-sm bg-gray-light" style="max-height: 500px; overflow-y: auto;">
+                                        <div ng-repeat="msg in inv.investigation_data.messages" class="mb-md">
+                                            <p><strong>{{msg.role | capitalize}}:</strong></p>
+                                            <div marked="msg.content"></div>
+                                            <div ng-if="msg.thoughts && msg.thoughts.length > 0" class="mt-xs">
+                                                <small class="text-info">
+                                                    <i class="fa fa-lightbulb-o"></i> <em>{{msg.thoughts.join(' ')}}</em>
+                                                </small>
+                                            </div>
+                                            <hr ng-if="!$last">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

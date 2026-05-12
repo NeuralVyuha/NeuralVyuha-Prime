@@ -1,0 +1,366 @@
+<!-- Vyuha Knowledge Graph — AngularJS Template -->
+<!-- Requires: Cytoscape.js loaded via CDN in index.html -->
+<style>
+    .vyuha-container {
+        position: relative;
+        height: calc(100vh - 50px);
+        background: #0a0e1a;
+        overflow: hidden;
+    }
+    /* ── Header Bar ── */
+    .vyuha-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        background: linear-gradient(135deg, rgba(10,14,26,0.95), rgba(17,24,39,0.95));
+        border-bottom: 1px solid #2a2f45;
+    }
+    .vyuha-toolbar .title {
+        font-family: 'Courier New', monospace;
+        font-size: 16px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #06b6d4, #a855f7);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 1px;
+    }
+    .vyuha-toolbar .subtitle {
+        font-size: 10px;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+    .vyuha-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .vyuha-search {
+        background: #1a1f35;
+        border: 1px solid #2a2f45;
+        border-radius: 6px;
+        padding: 6px 12px;
+        color: #e2e8f0;
+        font-size: 12px;
+        width: 200px;
+        outline: none;
+    }
+    .vyuha-search:focus { border-color: #06b6d4; box-shadow: 0 0 0 2px rgba(6,182,212,0.2); }
+    .vyuha-btn {
+        background: #1a1f35;
+        border: 1px solid #2a2f45;
+        border-radius: 6px;
+        padding: 6px 12px;
+        color: #94a3b8;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .vyuha-btn:hover { border-color: #06b6d4; color: #06b6d4; }
+    .vyuha-btn.active { border-color: #06b6d4; color: #06b6d4; background: rgba(6,182,212,0.1); }
+    .vyuha-btn-add { background: rgba(6,182,212,0.1); border-color: #06b6d4; color: #06b6d4; }
+    .vyuha-btn-add:hover { background: rgba(6,182,212,0.2); }
+
+    /* ── Graph Canvas ── */
+    #vyuha-cy {
+        width: 100%;
+        height: calc(100vh - 100px);
+        background: #0a0e1a;
+    }
+
+    /* ── Detail Panel ── */
+    .vyuha-panel {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 380px;
+        height: 100%;
+        background: rgba(17,24,39,0.98);
+        border-left: 1px solid #2a2f45;
+        padding: 20px;
+        overflow-y: auto;
+        z-index: 999;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    }
+    .vyuha-panel.open { transform: translateX(0); }
+    .panel-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 24px;
+        height: 24px;
+        border: 1px solid #2a2f45;
+        border-radius: 4px;
+        background: transparent;
+        color: #94a3b8;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 22px;
+        text-align: center;
+    }
+    .panel-close:hover { border-color: #ef4444; color: #ef4444; }
+    .panel-title { font-size: 16px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+    .panel-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+    }
+    .panel-section { margin-bottom: 16px; }
+    .panel-section h5 {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #64748b;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #2a2f45;
+    }
+    .panel-section p { font-size: 12px; color: #94a3b8; line-height: 1.5; }
+    .panel-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+        font-size: 12px;
+    }
+    .panel-row .lbl { color: #94a3b8; }
+    .panel-row .val { font-family: monospace; color: #e2e8f0; }
+    .conn-list { list-style: none; padding: 0; margin: 0; }
+    .conn-list li {
+        padding: 6px 8px;
+        margin-bottom: 3px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 4px;
+        font-size: 11px;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .conn-list li .arrow { font-family: monospace; color: #64748b; }
+    .conn-list li .conn-label { margin-left: auto; font-size: 10px; color: #64748b; }
+    .panel-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .vyuha-btn-danger { border-color: #ef4444; color: #ef4444; }
+    .vyuha-btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+    /* ── Legend ── */
+    .vyuha-legend {
+        position: absolute;
+        bottom: 16px;
+        left: 16px;
+        background: rgba(17,24,39,0.9);
+        border: 1px solid #2a2f45;
+        border-radius: 8px;
+        padding: 12px 16px;
+        z-index: 998;
+    }
+    .vyuha-legend h5 { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; margin: 0 0 8px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8; margin-bottom: 3px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Stats ── */
+    .vyuha-stats {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        display: flex;
+        gap: 8px;
+        z-index: 998;
+    }
+    .stat-chip {
+        background: rgba(17,24,39,0.9);
+        border: 1px solid #2a2f45;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 11px;
+        color: #94a3b8;
+    }
+    .stat-chip .num { font-family: monospace; font-weight: 700; color: #06b6d4; }
+
+    /* ── Modal ── */
+    .vyuha-modal-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.6);
+        z-index: 1100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .vyuha-modal {
+        background: #1a1f35;
+        border: 1px solid #2a2f45;
+        border-radius: 12px;
+        padding: 24px;
+        width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .vyuha-modal h4 { color: #e2e8f0; font-size: 16px; margin: 0 0 16px; }
+    .vyuha-modal label { display: block; font-size: 11px; color: #94a3b8; margin: 8px 0 4px; text-transform: uppercase; letter-spacing: 1px; }
+    .vyuha-modal input, .vyuha-modal select {
+        width: 100%;
+        background: #0a0e1a;
+        border: 1px solid #2a2f45;
+        border-radius: 6px;
+        padding: 8px 12px;
+        color: #e2e8f0;
+        font-size: 13px;
+        outline: none;
+    }
+    .vyuha-modal input:focus, .vyuha-modal select:focus { border-color: #06b6d4; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
+</style>
+
+<div class="vyuha-container" ng-controller="nvVisualVyuhaCtrl as vm">
+    <!-- Toolbar -->
+    <div class="vyuha-toolbar">
+        <div>
+            <div class="title">VYUHA GRAPH</div>
+            <div class="subtitle">NeuralVyuha Knowledge Graph</div>
+        </div>
+        <div class="vyuha-controls">
+            <input type="text" class="vyuha-search" placeholder="Search nodes..." ng-model="vm.searchQuery" ng-change="vm.onSearch()" />
+            <button class="vyuha-btn" ng-click="vm.cycleLayout()">⚡ {{vm.layouts[vm.currentLayout]}}</button>
+            <button class="vyuha-btn" ng-click="vm.fitGraph()">◎ Fit</button>
+            <button class="vyuha-btn" ng-class="{'active': vm.showLabels}" ng-click="vm.toggleLabels()">◉ Topics</button>
+            <button class="vyuha-btn" ng-class="{'active': vm.animating}" ng-click="vm.toggleAnimation()">{{vm.animating ? '⏸' : '▶'}} Pulse</button>
+            <button class="vyuha-btn vyuha-btn-add" ng-click="vm.openAddNode()">+ Node</button>
+            <button class="vyuha-btn vyuha-btn-add" ng-click="vm.openAddEdge()">+ Edge</button>
+        </div>
+    </div>
+
+    <!-- Graph Canvas -->
+    <div id="vyuha-cy"></div>
+
+    <!-- Detail Panel -->
+    <div class="vyuha-panel" ng-class="{'open': vm.panelOpen}">
+        <button class="panel-close" ng-click="vm.closePanel()">✕</button>
+        <div ng-if="vm.panelData">
+            <div class="panel-title">
+                <span ng-style="{'color': vm.panelData.color}">●</span>
+                {{vm.panelData.label}}
+            </div>
+            <span class="panel-tag" ng-style="{'background': 'rgba(6,182,212,0.15)', 'color': vm.panelData.color}">{{vm.panelData.nodeType}}</span>
+
+            <div class="panel-section">
+                <h5>Description</h5>
+                <p>{{vm.panelData.desc}}</p>
+            </div>
+            <div class="panel-section" ng-if="vm.panelData.details">
+                <h5>Technical Details</h5>
+                <p>{{vm.panelData.details}}</p>
+            </div>
+            <div class="panel-section">
+                <h5>Specs</h5>
+                <div class="panel-row"><span class="lbl">Technology</span><span class="val">{{vm.panelData.tech || 'N/A'}}</span></div>
+                <div class="panel-row"><span class="lbl">Port</span><span class="val">{{vm.panelData.port || 'N/A'}}</span></div>
+                <div class="panel-row"><span class="lbl">RAM</span><span class="val">{{vm.panelData.ram || 'N/A'}}</span></div>
+            </div>
+            <div class="panel-section" ng-if="vm.panelData._outgoing.length || vm.panelData._incoming.length">
+                <h5>Connections ({{vm.panelData._outgoing.length + vm.panelData._incoming.length}})</h5>
+                <ul class="conn-list">
+                    <li ng-repeat="c in vm.panelData._outgoing"><span class="arrow">→</span> {{c.target}} <span class="conn-label">{{c.label}}</span></li>
+                    <li ng-repeat="c in vm.panelData._incoming"><span class="arrow">←</span> {{c.source}} <span class="conn-label">{{c.label}}</span></li>
+                </ul>
+            </div>
+            <!-- CRUD actions for custom nodes only -->
+            <div class="panel-actions" ng-if="vm.panelData.type === 'custom'">
+                <button class="vyuha-btn" ng-click="vm.editNode(vm.panelData.id)">✎ Edit</button>
+                <button class="vyuha-btn vyuha-btn-danger" ng-click="vm.deleteNode(vm.panelData.id)">🗑 Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="vyuha-legend">
+        <h5>Node Types</h5>
+        <div class="legend-item"><div class="legend-dot" style="background:#06b6d4"></div> API Gateway</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div> Processing Engine</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> Infrastructure</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Storage</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div> UI / Frontend</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ec4899"></div> Integration Hub</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444; width:10px; height:5px; border-radius:3px"></div> Kafka Topic</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div> Custom Node</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="vyuha-stats">
+        <div class="stat-chip"><span class="num">{{vm.nodeCount}}</span> nodes</div>
+        <div class="stat-chip"><span class="num">{{vm.edgeCount}}</span> connections</div>
+        <div class="stat-chip"><span class="num">{{vm.topicCount}}</span> topics</div>
+    </div>
+
+    <!-- Add Node Modal -->
+    <div class="vyuha-modal-overlay" ng-if="vm.showNodeModal">
+        <div class="vyuha-modal">
+            <h4>{{vm.editingNode ? 'Edit' : 'Add'}} Node</h4>
+            <label>Node ID</label>
+            <input type="text" ng-model="vm.nodeForm.id" ng-disabled="vm.editingNode" placeholder="e.g. my-scanner" />
+            <label>Label</label>
+            <input type="text" ng-model="vm.nodeForm.label" placeholder="e.g. Nessus Scanner" />
+            <label>Type</label>
+            <select ng-model="vm.nodeForm.type">
+                <option value="custom">Custom</option>
+                <option value="gateway">Gateway</option>
+                <option value="engine">Engine</option>
+                <option value="infra">Infrastructure</option>
+                <option value="storage">Storage</option>
+                <option value="integration">Integration</option>
+                <option value="external">External</option>
+            </select>
+            <label>Description</label>
+            <input type="text" ng-model="vm.nodeForm.desc" placeholder="What does this service do?" />
+            <label>Technology</label>
+            <input type="text" ng-model="vm.nodeForm.tech" placeholder="e.g. Python / Docker" />
+            <label>RAM</label>
+            <input type="text" ng-model="vm.nodeForm.ram" placeholder="e.g. ~200MB" />
+            <label>Port</label>
+            <input type="text" ng-model="vm.nodeForm.port" placeholder="e.g. 8080" />
+            <div class="modal-actions">
+                <button class="vyuha-btn" ng-click="vm.showNodeModal = false">Cancel</button>
+                <button class="vyuha-btn vyuha-btn-add" ng-click="vm.saveNode()">{{vm.editingNode ? 'Update' : 'Add'}} Node</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Edge Modal -->
+    <div class="vyuha-modal-overlay" ng-if="vm.showEdgeModal">
+        <div class="vyuha-modal">
+            <h4>Add Connection</h4>
+            <label>Source Node</label>
+            <select ng-model="vm.edgeForm.source">
+                <option ng-repeat="id in vm.getAllNodeIds()" value="{{id}}">{{id}}</option>
+            </select>
+            <label>Target Node</label>
+            <select ng-model="vm.edgeForm.target">
+                <option ng-repeat="id in vm.getAllNodeIds()" value="{{id}}">{{id}}</option>
+            </select>
+            <label>Label</label>
+            <input type="text" ng-model="vm.edgeForm.label" placeholder="e.g. sends alerts" />
+            <label>Type</label>
+            <select ng-model="vm.edgeForm.type">
+                <option value="custom">Custom</option>
+                <option value="http">HTTP</option>
+                <option value="kafka">Kafka</option>
+                <option value="infra">Infrastructure</option>
+                <option value="ws">WebSocket</option>
+                <option value="integration">Integration</option>
+            </select>
+            <div class="modal-actions">
+                <button class="vyuha-btn" ng-click="vm.showEdgeModal = false">Cancel</button>
+                <button class="vyuha-btn vyuha-btn-add" ng-click="vm.saveEdge()">Add Connection</button>
+            </div>
+        </div>
+    </div>
+</div>

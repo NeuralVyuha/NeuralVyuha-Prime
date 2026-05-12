@@ -1,0 +1,169 @@
+<nav class="navbar navbar-static-top main-navbar bg-navy" ng-if="!hideStatusBar" ng-show="currentUser.login">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button aria-expanded="false" class="navbar-toggle collapsed" data-target="#th-navbar-collapse"
+                data-toggle="collapse" type="button">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <a class="navbar-brand" ui-sref="app.index" style="height: 50px; display: flex; align-items: center; padding: 0 15px; margin-left: -15px;">
+                <img src="images/nv_logo.png" style="height: 42px; width: auto; border-radius: 4px; object-fit: contain;">
+                <span style="font-weight: 700; font-size: 19px; color: #fff; margin-left: 10px;">NeuralVyuha</span>
+            </a>
+        </div>
+
+        <div class="collapse navbar-collapse" id="th-navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li ui-sref-active="active">
+                    <a ui-sref="app.index">
+                        <i class="fa fa-tachometer"></i> Dashboard
+                    </a>
+                </li>
+                <li ui-sref-active="active">
+                    <a ui-sref="app.alerts">
+                        <i class="fa fa-bell"></i> Alerts
+                    </a>
+                </li>
+                <li ui-sref-active="active">
+                    <a ui-sref="app.cases">
+                        <i class="fa fa-briefcase"></i> Cases
+                    </a>
+                </li>
+                <li ui-sref-active="active">
+                    <a ui-sref="app.integrations">
+                        <i class="fa fa-plug"></i> Integrations
+                    </a>
+                </li>
+                <li ui-sref-active="active">
+                    <a ui-sref="app.ingest-control">
+                        <i class="fa fa-sliders"></i> Ingest Control
+                    </a>
+                </li>
+                <li ui-sref-active="active">
+                    <a ui-sref="app.threat-hunter">
+                        <i class="fa fa-crosshairs"></i> Threat Hunter
+                    </a>
+                </li>
+                <li ui-sref-active="active">
+                    <a ui-sref="app.nv-help">
+                        <i class="fa fa-question-circle"></i> Help
+                    </a>
+                </li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li ng-if="async > 0" class="hidden-xs">
+                    <a>{{async}}
+                        <i class="fa fa-circle-o-notch fa-spin"></i>
+                    </a>
+                </li>
+
+                <!-- Admin dropdown — available to all authenticated users -->
+                <li class="dropdown" uib-dropdown>
+                    <a class="dropdown-toggle" uib-dropdown-toggle href id="nv-admin-menu-toggle">
+                        <i class="fa fa-cog"></i>
+                        <span class="hpad5">Admin</span>
+                        <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu" uib-dropdown-menu>
+                        <li>
+                            <a ui-sref="app.admin">
+                                <i class="fa fa-wrench"></i>
+                                <span class="hpad5">Admin Panel</span>
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a ui-sref="app.ingest-control">
+                                <i class="fa fa-sliders"></i>
+                                <span class="hpad5">Ingest Control Hub</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a ui-sref="app.integrations">
+                                <i class="fa fa-plug"></i>
+                                <span class="hpad5">Integrations Hub</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a ui-sref="app.index" ng-click="aboutNeuralVyuha()">
+                                <i class="fa fa-info-circle"></i>
+                                <span class="hpad5">About NeuralVyuha</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- User profile dropdown -->
+                <li class="dropdown" uib-dropdown id="nv-user-menu">
+                    <a class="profile dropdown-toggle" uib-dropdown-toggle href>
+                        <span class="nv-user-pill">
+                            <span class="nv-user-avatar-sm">{{currentUser.name ? currentUser.name[0] : 'A'}}</span>
+                            {{currentUser.login}}/{{currentUser.name || 'Administrator'}}
+                        </span>
+                        <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-right" uib-dropdown-menu>
+                        <li class="dropdown-header">
+                            <i class="fa fa-user-circle"></i>
+                            {{currentUser.name || 'Administrator'}}
+                        </li>
+                        <li class="dropdown-header" style="font-weight:400;color:#aaa;font-size:11px;margin-top:-6px">
+                            {{currentUser.organisation}} &middot; {{(currentUser.roles || []).join(', ')}}
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a ui-sref="app.profile" id="nv-my-profile-link">
+                                <i class="fa fa-id-card"></i> My Profile
+                            </a>
+                        </li>
+                        <li>
+                            <a ui-sref="app.admin">
+                                <i class="fa fa-cog"></i> Admin Panel
+                            </a>
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <a href ng-click="logout()" id="nv-logout-btn">
+                                <i class="fa fa-sign-out"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li ng-if="currentUser.organisations && currentUser.organisations.length > 1">
+                    <a href ng-click="switchOrg()">
+                        <i class="fa fa-random"></i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+</nav>
+
+<style>
+    .nv-user-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+    }
+
+    .nv-user-avatar-sm {
+        display: inline-flex;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4a9eff, #9b77e8);
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fff;
+        flex-shrink: 0;
+    }
+</style>

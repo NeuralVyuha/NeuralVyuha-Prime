@@ -1,0 +1,168 @@
+<div class="nv-live-stream-container" ng-class="{'nv-sidebar-mode': mode === 'sidebar'}">
+    <div class="nv-live-stream-header">
+        <div class="nv-live-status-dot" ng-class="{ 'pulse': !loading }"></div>
+        <span class="nv-live-label">Vyuha Stream: ACTIVE</span>
+        <div class="nv-live-actions" ng-if="mode !== 'sidebar'">
+            <button class="btn btn-xs btn-default" ng-click="loadBuffer()">
+                <i class="fa fa-refresh" ng-class="{'fa-spin': loading}"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="nv-live-scroll-area">
+        <div class="nv-live-event-card animate__animated animate__fadeInDown" 
+             ng-repeat="e in events | limitTo: options.limit || 50"
+             ng-class="getSeverityClass(e.severity)">
+            
+            <div class="nv-event-meta">
+                <span class="nv-event-time">{{e.timestamp | date:'HH:mm:ss'}}</span>
+                <span class="nv-badge badge-source">{{e.source}}</span>
+                <span class="nv-live-indicator" ng-if="e.status === 'LIVE'">• LIVE</span>
+            </div>
+            
+            <div class="nv-event-title">{{e.title}}</div>
+            
+            <div class="nv-event-footer">
+                <span class="nv-event-id text-muted">ID: {{e.event_id | limitTo:8}}...</span>
+                <a class="nv-event-link" ng-href="#!/nv/alerts?id={{e.event_id}}">Investigate ↗</a>
+            </div>
+        </div>
+
+        <div class="nv-no-events" ng-if="events.length === 0 && !loading">
+            <i class="fa fa-terminal"></i>
+            <p>Waiting for incoming alerts...</p>
+        </div>
+    </div>
+
+    <style>
+        .nv-live-stream-container {
+            background: #0d1117;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #30363d;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nv-live-stream-container.nv-sidebar-mode {
+            min-height: 600px;
+            height: calc(100vh - 250px);
+            border: none;
+            background: #0d1117;
+            border-radius: 0;
+        }
+
+        .nv-live-stream-header {
+            background: #161b22;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+            font-size: 11px;
+            font-weight: 700;
+            color: #8b949e;
+            letter-spacing: 0.05em;
+        }
+
+        .nv-live-status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #3ecf8e;
+            margin-right: 8px;
+        }
+
+        .nv-live-status-dot.pulse {
+            animation: nv-pulse-stream 1.5s infinite;
+        }
+
+        @keyframes nv-pulse-stream {
+            0% { box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(62, 207, 142, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(62, 207, 142, 0); }
+        }
+
+        .nv-live-scroll-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: #30363d transparent;
+        }
+
+        .nv-live-event-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .nv-live-event-card:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: #4a9eff;
+        }
+
+        .nv-event-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .nv-event-time { color: #8b949e; }
+        
+        .badge-source {
+            background: rgba(74, 158, 255, 0.1);
+            color: #4a9eff;
+            text-transform: uppercase;
+        }
+
+        .nv-live-indicator {
+            color: #3ecf8e;
+            font-weight: 800;
+        }
+
+        .nv-event-title {
+            font-size: 12px;
+            font-weight: 500;
+            color: #e6edf3;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .nv-event-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+        }
+
+        .nv-event-link {
+            color: #4a9eff;
+            text-decoration: none;
+        }
+
+        /* Severity Colors */
+        .sev-critical { border-left: 3px solid #f85149 !important; box-shadow: inset 2px 0 10px rgba(248, 81, 73, 0.05); }
+        .sev-high { border-left: 3px solid #f0883e !important; }
+        .sev-medium { border-left: 3px solid #d29922 !important; }
+        .sev-low { border-left: 3px solid #3ecf8e !important; }
+
+        .nv-no-events {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #484f58;
+            opacity: 0.6;
+        }
+
+        .nv-no-events i { font-size: 32px; margin-bottom: 12px; }
+    </style>
+</div>

@@ -1,0 +1,21 @@
+rules:
+  - rule_id: "R1_HOST_RULE"
+    rule_name: "Same host + same rule_id"
+    confidence: "HIGH"
+    window_minutes: 15
+    correlation_key_template: "{tenant_id}|{host}|{rule_id}"
+    required_fields: ["tenant_id", "host", "rule_id"]
+
+  - rule_id: "R2_USER_AUTH"
+    rule_name: "Auth anomalies by user"
+    confidence: "HIGH"
+    window_minutes: 10
+    correlation_key_template: "{tenant_id}|{user}|{auth_type}"
+    required_fields: ["tenant_id", "user", "auth_type"]
+
+  - rule_id: "R3_OBSERVABLE_HASH"
+    rule_name: "Same observable hash"
+    confidence: "MEDIUM"
+    window_minutes: 30
+    correlation_key_template: "{tenant_id}|{observable_hash}|{observable_type}"
+    required_fields: ["tenant_id", "observable_hash", "observable_type"]

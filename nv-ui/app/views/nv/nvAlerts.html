@@ -1,0 +1,545 @@
+<!-- NeuralVyuha Prime — Enterprise Alerts Command Center -->
+<div class="nv-dashboard" ng-controller="NvAlertListCtrl as vm">
+
+    <!-- ═══ Welcome Banner + Live Stream Indicator ═══ -->
+    <div class="nv-welcome-banner">
+        <div>
+            <h2 class="nv-welcome-title">
+                <i class="fa fa-bolt"></i> Alert Command Center
+            </h2>
+            <p class="nv-welcome-subtitle">REAL-TIME THREAT INTELLIGENCE · ENTERPRISE TRIAGE</p>
+        </div>
+        <div class="nv-welcome-meta">
+            <span class="nv-refresh-indicator" ng-click="vm.refresh()">
+                <span class="nv-live-dot"
+                    ng-class="{'nv-dot-online': vm.liveEnabled, 'nv-dot-offline': !vm.liveEnabled}"></span>
+                <span ng-click="vm.toggleLive(); $event.stopPropagation()">{{vm.liveEnabled ? 'LIVE' : 'PAUSED'}}</span>
+            </span>
+            <span class="nv-refresh-indicator" ng-click="vm.refresh()">
+                <i class="fa fa-refresh" ng-class="{'fa-spin': vm.loading}"></i> REFRESH
+            </span>
+            <span class="nv-last-updated" ng-if="vm.newAlertCount > 0">
+                <span class="nv-badge-count nv-badge-pulse">+{{vm.newAlertCount}} new</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- ═══ Error Banner ═══ -->
+    <div class="nv-error-banner" ng-if="vm.error">
+        <i class="fa fa-exclamation-triangle"></i>
+        <span>{{vm.error}}</span>
+        <button class="nv-retry-btn" ng-click="vm.refresh()">Retry</button>
+    </div>
+
+    <!-- ═══ Stats Row ═══ -->
+    <div class="row nv-stats-row">
+        <div class="col-md-3 col-sm-6">
+            <div class="nv-stat-card nv-stat-alerts" ng-click="vm.setStatusFilter('New')"
+                ng-class="{'nv-stat-active': vm.filterParams.status === 'New'}">
+                <div class="nv-stat-icon"><i class="fa fa-plus-circle"></i></div>
+                <div class="nv-stat-content">
+                    <div class="nv-stat-value">{{vm.stats.new || 0}}</div>
+                    <div class="nv-stat-label">New Alerts</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="nv-stat-card nv-stat-open" ng-click="vm.setStatusFilter('Updated')"
+                ng-class="{'nv-stat-active': vm.filterParams.status === 'Updated'}">
+                <div class="nv-stat-icon"><i class="fa fa-refresh"></i></div>
+                <div class="nv-stat-content">
+                    <div class="nv-stat-value">{{vm.stats.updated || 0}}</div>
+                    <div class="nv-stat-label">Updated</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="nv-stat-card nv-stat-cases" ng-click="vm.setStatusFilter('Imported')"
+                ng-class="{'nv-stat-active': vm.filterParams.status === 'Imported'}">
+                <div class="nv-stat-icon"><i class="fa fa-check-circle"></i></div>
+                <div class="nv-stat-content">
+                    <div class="nv-stat-value">{{vm.stats.imported || 0}}</div>
+                    <div class="nv-stat-label">Imported</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="nv-stat-card nv-stat-incidents" ng-click="vm.clearFilters()">
+                <div class="nv-stat-icon">
+                    <img src="images/nv_logo.png" style="height:28px; filter: brightness(1.2);">
+                </div>
+                <div class="nv-stat-content">
+                    <div class="nv-stat-value">{{vm.stats.total || 0}}</div>
+                    <div class="nv-stat-label">Total Alerts</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Main Content ═══ -->
+    <div class="row nv-main-row">
+        <div ng-class="{'col-md-8': vm.sidebarOpen, 'col-md-12': !vm.sidebarOpen}">
+            <div class="nv-panel nv-panel-glass">
+
+                <!-- Panel Header: Filter Tray -->
+                <div class="nv-panel-header nv-alert-filter-header">
+                    <h4 class="nv-panel-title">
+                        <i class="fa fa-list"></i> Alerts
+                        <span class="nv-badge-count" ng-if="vm.totalAlerts > 0">{{vm.totalAlerts}}</span>
+                    </h4>
+                    <div class="nv-panel-actions nv-filter-tray">
+                        <!-- Status Pills -->
+                        <div class="btn-group nv-filter-group">
+                            <button class="btn btn-sm nv-filter-btn" ng-click="vm.clearFilters()"
+                                ng-class="{'nv-filter-active': !vm.filterParams.status}">All</button>
+                            <button class="btn btn-sm nv-filter-btn" ng-repeat="s in vm.statusPresets"
+                                ng-click="vm.setStatusFilter(s)"
+                                ng-class="{'nv-filter-active': vm.filterParams.status === s}">{{s}}</button>
+                        </div>
+
+                        <!-- Severity Dropdown -->
+                        <div class="btn-group nv-filter-group" uib-dropdown>
+                            <button class="btn btn-sm nv-filter-btn" uib-dropdown-toggle>
+                                <i class="fa fa-thermometer-half"></i>
+                                {{vm.filterParams.severity ? vm.getSeverityLabel(vm.filterParams.severity) :
+                                'Severity'}}
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" uib-dropdown-menu>
+                                <li><a href ng-click="vm.setSeverityFilter(null)">All Severities</a></li>
+                                <li class="divider"></li>
+                                <li ng-repeat="sev in vm.severityLevels">
+                                    <a href ng-click="vm.setSeverityFilter(sev.value)">
+                                        <span class="nv-severity" ng-class="sev.cls">{{sev.label}}</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="nv-search-box">
+                            <i class="fa fa-search"></i>
+                            <input type="text" class="nv-search-input" placeholder="Search alerts..."
+                                ng-model="vm.filterParams.q" ng-change="vm.onSearchChange()">
+                        </div>
+
+                        <!-- AI Correlation -->
+                        <div class="nv-search-box" style="margin-left: 10px; border: none; background: transparent; box-shadow: none; padding: 0;">
+                            <button class="btn btn-sm" ng-click="vm.runAiCorrelation()" ng-disabled="vm.correlating" style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white; border: none; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); border-radius: 4px; padding: 5px 15px; font-weight: 600;">
+                                <i class="fa" ng-class="vm.correlating ? 'fa-spinner fa-spin' : 'fa-magic'"></i> 
+                                {{vm.correlating ? 'Correlating...' : 'AI Correlate Alerts'}}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bulk Action Toolbar -->
+                <div class="nv-bulk-toolbar" ng-show="vm.selectedCount > 0">
+                    <span class="nv-bulk-count">
+                        <i class="fa fa-check-square-o"></i> {{vm.selectedCount}} selected
+                    </span>
+                    <div class="nv-bulk-actions">
+                        <button class="btn btn-sm nv-bulk-btn" ng-click="vm.bulkMarkRead()" uib-tooltip="Mark as Read">
+                            <i class="fa fa-envelope-open-o"></i> Read
+                        </button>
+                        <button class="btn btn-sm nv-bulk-btn" ng-click="vm.bulkIgnore()" uib-tooltip="Ignore">
+                            <i class="fa fa-eye-slash"></i> Ignore
+                        </button>
+                        <button class="btn btn-sm nv-bulk-btn" ng-click="vm.bulkFalsePositive()"
+                            uib-tooltip="False Positive">
+                            <i class="fa fa-ban"></i> FP
+                        </button>
+                        <button class="btn btn-sm nv-bulk-btn nv-bulk-promote" ng-click="vm.bulkPromote()"
+                            uib-tooltip="Promote to Case">
+                            <i class="fa fa-rocket"></i> Promote
+                        </button>
+                        <button class="btn btn-sm nv-bulk-btn nv-bulk-delete" ng-click="vm.bulkDelete()"
+                            uib-tooltip="Delete">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                        <button class="btn btn-sm nv-bulk-btn" ng-click="vm.clearSelection()">
+                            <i class="fa fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table Body -->
+                <div class="nv-panel-body">
+
+                    <!-- Skeleton Loading -->
+                    <div class="nv-skeleton-container" ng-if="vm.loading">
+                        <div class="nv-skeleton-row" ng-repeat="i in [1,2,3,4,5,6,7,8]">
+                            <div class="nv-skeleton nv-skeleton-id"></div>
+                            <div class="nv-skeleton nv-skeleton-badge"></div>
+                            <div class="nv-skeleton nv-skeleton-text"></div>
+                            <div class="nv-skeleton nv-skeleton-label"></div>
+                            <div class="nv-skeleton nv-skeleton-date"></div>
+                            <div class="nv-skeleton nv-skeleton-status"></div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="nv-empty-state" ng-if="!vm.loading && vm.alerts.length === 0">
+                        <div class="nv-empty-content">
+                        <div class="nv-empty-icon">
+                            <img src="images/nv_logo.png" style="height:64px; opacity:0.3; filter: grayscale(1);">
+                        </div>
+                            <p class="nv-empty-text">
+                                <span ng-if="vm.filterParams.status || vm.filterParams.q">No alerts match your current
+                                    filters.</span>
+                                <span ng-if="!vm.filterParams.status && !vm.filterParams.q">All clear! No alerts in the
+                                    queue.</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Alert Table -->
+                    <table class="table nv-table" ng-if="!vm.loading && vm.alerts.length > 0">
+                        <thead>
+                            <tr>
+                                <th width="30px">
+                                    <input type="checkbox" ng-checked="vm.selectAllChecked"
+                                        ng-click="vm.toggleSelectAll()">
+                                </th>
+                                <th width="75px" class="clickable" ng-click="vm.sortBy('payload.severity')">
+                                    Severity <i class="fa" ng-class="vm.getSortIcon('payload.severity')"></i>
+                                </th>
+                                <th width="50px" class="text-center">Read</th>
+                                <th class="clickable" ng-click="vm.sortBy('payload.title')">
+                                    Title
+                                </th>
+                                <th width="100px" class="clickable" ng-click="vm.sortBy('payload.type')">
+                                    Type <i class="fa" ng-class="vm.getSortIcon('payload.type')"></i>
+                                </th>
+                                <th width="120px" class="clickable" ng-click="vm.sortBy('payload.source')">
+                                    Source <i class="fa" ng-class="vm.getSortIcon('payload.source')"></i>
+                                </th>
+                                <th width="100px">Reference</th>
+                                <th width="50px" class="text-center" uib-tooltip="IOC Count">IOCs</th>
+                                <th width="70px" class="clickable" ng-click="vm.sortBy('status')">
+                                    Status <i class="fa" ng-class="vm.getSortIcon('status')"></i>
+                                </th>
+                                <th width="120px" class="clickable" ng-click="vm.sortBy('timestamp')">
+                                    Date <i class="fa" ng-class="vm.getSortIcon('timestamp')"></i>
+                                </th>
+                                <th width="120px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="nv-table-row" ng-repeat="alert in vm.alerts track by $index"
+                                ng-class="{'nv-alert-row-selected': alert._selected, 'nv-alert-new': alert._isNew}"
+                                ng-click="vm.openSidebar(alert)">
+                                <td ng-click="$event.stopPropagation()">
+                                    <input type="checkbox" ng-checked="alert._selected"
+                                        ng-click="vm.toggleSelect(alert)">
+                                </td>
+                                <td>
+                                    <span class="nv-severity"
+                                        ng-class="vm.getSeverityClass(vm.getAlertSeverity(alert))">
+                                        {{vm.getSeverityLabel(vm.getAlertSeverity(alert))}}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <i class="fa"
+                                        ng-class="alert.read ? 'fa-envelope-open-o nv-text-muted' : 'fa-envelope nv-text-accent'"></i>
+                                </td>
+                                <td class="wrap">
+                                    <div class="nv-alert-title-cell">
+                                        <strong>{{vm.getAlertTitle(alert)}}</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="nv-id-badge">{{vm.getAlertType(alert)}}</span>
+                                </td>
+                                <td>{{vm.getAlertSource(alert)}}</td>
+                                <td class="nv-text-mono">{{vm.getAlertRef(alert) | limitTo:18}}</td>
+                                <td class="text-center">
+                                    <span class="nv-ioc-count" ng-if="vm.getIocCount(alert) > 0">
+                                        {{vm.getIocCount(alert)}}
+                                    </span>
+                                    <span class="nv-text-muted" ng-if="vm.getIocCount(alert) === 0">-</span>
+                                </td>
+                                <td>
+                                    <span class="nv-status-label"
+                                        ng-class="vm.getStatusClass(vm.getAlertStatus(alert))">
+                                        {{vm.getAlertStatus(alert)}}
+                                    </span>
+                                </td>
+                                <td class="nv-timestamp">
+                                    {{vm.getAlertDate(alert) | date:'MMM d, HH:mm'}}
+                                </td>
+                                <td ng-click="$event.stopPropagation()">
+                                    <div class="nv-row-actions">
+                                        <a class="nv-action-btn" ng-click="vm.promoteAlert(alert)"
+                                            uib-tooltip="Promote to Case"
+                                            ng-if="vm.getAlertStatus(alert) !== 'Imported'">
+                                            <i class="fa fa-rocket"></i>
+                                        </a>
+                                        <a class="nv-action-btn" ng-click="vm.investigateAlert(alert)"
+                                            uib-tooltip="AI Analyst: Investigate"
+                                            style="color: #10b981; font-size: 16px;">
+                                            <i class="fa fa-magic"></i>
+                                        </a>
+                                        <a class="nv-action-btn" ng-click="vm.toggleRead(alert)"
+                                            uib-tooltip="{{alert.read ? 'Mark Unread' : 'Mark Read'}}">
+                                            <i class="fa"
+                                                ng-class="alert.read ? 'fa-envelope-open-o' : 'fa-envelope'"></i>
+                                        </a>
+                                        <a class="nv-action-btn" ng-click="vm.toggleFollow(alert)"
+                                            uib-tooltip="{{alert.follow ? 'Unfollow' : 'Follow'}}">
+                                            <i class="fa" ng-class="alert.follow ? 'fa-eye' : 'fa-eye-slash'"></i>
+                                        </a>
+                                        <a class="nv-action-btn nv-action-danger" ng-click="vm.deleteAlert(alert)"
+                                            uib-tooltip="Delete">
+                                            <i class="fa fa-trash-o"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer -->
+                <div class="nv-panel-footer" ng-if="!vm.loading && vm.totalAlerts > 0">
+                    <span class="nv-page-info">
+                        Showing {{(vm.page - 1) * vm.pageSize + 1}} – {{vm.page * vm.pageSize > vm.totalAlerts ?
+                        vm.totalAlerts : vm.page * vm.pageSize}}
+                        of {{vm.totalAlerts}}
+                    </span>
+                    <div class="nv-pagination">
+                        <button class="nv-page-btn" ng-click="vm.prevPage()" ng-disabled="vm.page <= 1">
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <span class="nv-page-number">Page {{vm.page}} / {{vm.totalPages}}</span>
+                        <button class="nv-page-btn" ng-click="vm.nextPage()" ng-disabled="vm.page >= vm.totalPages">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Quick View Sidebar ═══ -->
+        <div class="col-md-4 nv-alert-sidebar-col" ng-if="vm.sidebarOpen">
+            <div class="nv-panel nv-panel-glass nv-alert-sidebar">
+                <div class="nv-panel-header">
+                    <h4 class="nv-panel-title">
+                        <i class="fa fa-search-plus"></i> Alert Details
+                    </h4>
+                    <button class="btn btn-sm nv-filter-btn" ng-click="vm.closeSidebar()">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Sidebar Tabs -->
+                <div class="nv-sidebar-tabs">
+                    <button class="nv-sidebar-tab" ng-click="vm.setSidebarTab('details')"
+                        ng-class="{'nv-sidebar-tab-active': vm.sidebarTab === 'details'}">
+                        <i class="fa fa-info-circle"></i> Details
+                    </button>
+                    <button class="nv-sidebar-tab" ng-click="vm.setSidebarTab('iocs')"
+                        ng-class="{'nv-sidebar-tab-active': vm.sidebarTab === 'iocs'}">
+                        <i class="fa fa-crosshairs"></i> IOCs
+                        <span class="nv-tab-badge"
+                            ng-if="vm.selectedIocs && vm.selectedIocs.total > 0">{{vm.selectedIocs.total}}</span>
+                    </button>
+                    <button class="nv-sidebar-tab" ng-click="vm.setSidebarTab('similar')"
+                        ng-class="{'nv-sidebar-tab-active': vm.sidebarTab === 'similar'}">
+                        <i class="fa fa-clone"></i> Similar
+                        <span class="nv-tab-badge"
+                            ng-if="vm.selectedSimilar && vm.selectedSimilar.total > 0">{{vm.selectedSimilar.total}}</span>
+                    </button>
+                    <button class="nv-sidebar-tab" ng-click="vm.setSidebarTab('raw')"
+                        ng-class="{'nv-sidebar-tab-active': vm.sidebarTab === 'raw'}">
+                        <i class="fa fa-code"></i> Raw
+                    </button>
+                </div>
+
+                <div class="nv-panel-body nv-sidebar-body">
+
+                    <!-- Loading -->
+                    <div class="nv-sidebar-loading" ng-if="vm.sidebarLoading">
+                        <i class="fa fa-spinner fa-spin fa-2x"></i>
+                        <p>Loading enrichment data...</p>
+                    </div>
+
+                    <!-- Details Tab -->
+                    <div ng-if="vm.sidebarTab === 'details' && !vm.sidebarLoading">
+                        <div class="nv-detail-section">
+                            <div class="nv-detail-row">
+                                <span class="nv-detail-label">Title</span>
+                                <span class="nv-detail-value">{{vm.getAlertTitle(vm.selectedAlert)}}</span>
+                            </div>
+                            <div class="nv-detail-row">
+                                <span class="nv-detail-label">Severity</span>
+                                <span class="nv-severity"
+                                    ng-class="vm.getSeverityClass(vm.getAlertSeverity(vm.selectedAlert))">
+                                    {{vm.getSeverityLabel(vm.getAlertSeverity(vm.selectedAlert))}}
+                                </span>
+                            </div>
+                            <div class="nv-detail-row">
+                                <span class="nv-detail-label">Status</span>
+                                <span class="nv-status-label"
+                                    ng-class="vm.getStatusClass(vm.getAlertStatus(vm.selectedAlert))">
+                                    {{vm.getAlertStatus(vm.selectedAlert)}}
+                                </span>
+                            </div>
+                            <div class="nv-detail-row">
+                                <span class="nv-detail-label">Source</span>
+                                <span class="nv-detail-value">{{vm.getAlertSource(vm.selectedAlert)}}</span>
+                            </div>
+                            <div class="nv-detail-row">
+                                <span class="nv-detail-label">Type</span>
+                                <span class="nv-detail-value">{{vm.getAlertType(vm.selectedAlert)}}</span>
+                            </div>
+                            <div class="nv-detail-row">
+                                <span class="nv-detail-label">Reference</span>
+                                <span class="nv-detail-value nv-text-mono">{{vm.getAlertRef(vm.selectedAlert)}}</span>
+                            </div>
+                            <div class="nv-detail-row">
+                                <span class="nv-detail-label">Date</span>
+                                <span class="nv-detail-value">{{vm.getAlertDate(vm.selectedAlert) | date:'yyyy-MM-dd
+                                    HH:mm:ss'}}</span>
+                            </div>
+                            <div class="nv-detail-row"
+                                ng-if="vm.selectedAlert.payload.description || vm.selectedAlert.description">
+                                <span class="nv-detail-label">Description</span>
+                                <span class="nv-detail-value nv-detail-desc">{{vm.selectedAlert.payload.description ||
+                                    vm.selectedAlert.description}}</span>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="nv-sidebar-actions">
+                            <button class="btn btn-sm nv-sidebar-action-btn nv-btn-ai"
+                                ng-click="vm.investigateAlert(vm.selectedAlert)">
+                                <i class="fa fa-magic"></i> AI Investigate
+                            </button>
+                            <button class="btn btn-sm nv-sidebar-action-btn nv-btn-promote"
+                                ng-click="vm.promoteAlert(vm.selectedAlert)"
+                                ng-if="vm.getAlertStatus(vm.selectedAlert) !== 'Imported'">
+                                <i class="fa fa-rocket"></i> Promote to Case
+                            </button>
+                            <button class="btn btn-sm nv-sidebar-action-btn"
+                                ng-click="vm.investigateAlert(vm.selectedAlert)"
+                                style="border-color: #10b981; color: #10b981;">
+                                <i class="fa fa-brain"></i> AI Investigate
+                            </button>
+                            <button class="btn btn-sm nv-sidebar-action-btn" ng-click="vm.toggleRead(vm.selectedAlert)">
+                                <i class="fa"
+                                    ng-class="vm.selectedAlert.read ? 'fa-envelope-open-o' : 'fa-envelope'"></i>
+                                {{vm.selectedAlert.read ? 'Mark Unread' : 'Mark Read'}}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- IOC Tab -->
+                    <div ng-if="vm.sidebarTab === 'iocs' && !vm.sidebarLoading">
+                        <div ng-if="!vm.selectedIocs || vm.selectedIocs.total === 0" class="nv-sidebar-empty">
+                            <i class="fa fa-check-circle"></i>
+                            <p>No IOCs found in this alert.</p>
+                        </div>
+                        <div ng-if="vm.selectedIocs && vm.selectedIocs.total > 0">
+                            <div class="nv-ioc-section" ng-if="vm.selectedIocs.ips.length > 0">
+                                <h6 class="nv-ioc-type-label"><i class="fa fa-globe"></i> IP Addresses</h6>
+                                <span class="nv-ioc-chip nv-ioc-ip" ng-repeat="ip in vm.selectedIocs.ips">{{ip}}</span>
+                            </div>
+                            <div class="nv-ioc-section" ng-if="vm.selectedIocs.hashes.length > 0">
+                                <h6 class="nv-ioc-type-label"><i class="fa fa-hashtag"></i> Hashes</h6>
+                                <span class="nv-ioc-chip nv-ioc-hash" ng-repeat="h in vm.selectedIocs.hashes">{{h |
+                                    limitTo:16}}…</span>
+                            </div>
+                            <div class="nv-ioc-section" ng-if="vm.selectedIocs.domains.length > 0">
+                                <h6 class="nv-ioc-type-label"><i class="fa fa-link"></i> Domains</h6>
+                                <span class="nv-ioc-chip nv-ioc-domain"
+                                    ng-repeat="d in vm.selectedIocs.domains">{{d}}</span>
+                            </div>
+                            <div class="nv-ioc-section" ng-if="vm.selectedIocs.urls.length > 0">
+                                <h6 class="nv-ioc-type-label"><i class="fa fa-external-link"></i> URLs</h6>
+                                <span class="nv-ioc-chip nv-ioc-url" ng-repeat="u in vm.selectedIocs.urls">{{u |
+                                    limitTo:40}}…</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Similar Tab -->
+                    <div ng-if="vm.sidebarTab === 'similar' && !vm.sidebarLoading">
+                        <div ng-if="!vm.selectedSimilar || vm.selectedSimilar.total === 0" class="nv-sidebar-empty">
+                            <i class="fa fa-check-circle"></i>
+                            <p>No similar alerts found.</p>
+                        </div>
+                        <div ng-if="vm.selectedSimilar && vm.selectedSimilar.total > 0">
+                            <p class="nv-similar-count">{{vm.selectedSimilar.total}} similar alert(s) found</p>
+                            <div class="nv-similar-item" ng-repeat="sim in vm.selectedSimilar.similar"
+                                ng-click="vm.openSidebar(sim)">
+                                <div class="nv-similar-title">
+                                    <span class="nv-severity nv-severity-sm"
+                                        ng-class="vm.getSeverityClass(vm.getAlertSeverity(sim))">
+                                        {{vm.getSeverityLabel(vm.getAlertSeverity(sim))}}
+                                    </span>
+                                    {{vm.getAlertTitle(sim)}}
+                                </div>
+                                <div class="nv-similar-meta">
+                                    {{vm.getAlertSource(sim)}} · {{vm.getAlertDate(sim) | date:'MMM d, HH:mm'}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Raw JSON Tab -->
+                    <div ng-if="vm.sidebarTab === 'raw' && !vm.sidebarLoading">
+                        <pre class="nv-raw-json">{{vm.getAlertRawJson()}}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ AI Correlation Modal Template ═══ -->
+    <script type="text/ng-template" id="correlationModal.html">
+        <div class="modal-header nv-modal-header" style="background: #0f172a; color: white; border-bottom: 1px solid #1e293b;">
+            <h3 class="modal-title nv-modal-title">
+                <i class="fa fa-magic" style="color: #10b981;"></i> AI Alert Correlation
+            </h3>
+        </div>
+        <div class="modal-body nv-modal-body" style="background: #0f172a; color: #cbd5e1; max-height: 600px; overflow-y: auto;">
+            <p style="margin-bottom: 20px;">The AI has analyzed unassigned alerts and suggested the following candidate cases based on common IOCs and attack patterns.</p>
+            
+            <div ng-if="!clusters || clusters.length === 0" class="alert alert-info" style="background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #10b981;">
+                <i class="fa fa-check-circle"></i> No strong correlation clusters found among the current unassigned alerts.
+            </div>
+
+            <div ng-repeat="cluster in clusters" style="background: #1e293b; border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div>
+                        <h4 style="margin: 0 0 5px 0; color: #f8fafc;">{{cluster.suggested_title}}</h4>
+                        <span class="nv-severity" ng-class="{'nv-sev-critical': cluster.severity >= 3, 'nv-sev-medium': cluster.severity == 2, 'nv-sev-low': cluster.severity == 1}">Severity {{cluster.severity}}</span>
+                        <span style="color: #94a3b8; font-size: 0.9em; margin-left: 10px;"><i class="fa fa-files-o"></i> {{cluster.alert_ids.length}} Alerts</span>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-success" ng-click="commitCluster(cluster)" ng-disabled="committing || cluster._committed" style="background: #10b981; border: none;">
+                            <i class="fa" ng-class="committing && !cluster._committed ? 'fa-spinner fa-spin' : 'fa-check'"></i> 
+                            {{cluster._committed ? 'Promoted' : 'Promote to Case'}}
+                        </button>
+                    </div>
+                </div>
+                <p style="color: #e2e8f0; font-size: 0.95em; line-height: 1.4;">{{cluster.reasoning}}</p>
+                
+                <div style="margin-top: 10px;">
+                    <a href ng-click="cluster._showAlerts = !cluster._showAlerts" style="color: #38bdf8; font-size: 0.9em; text-decoration: none;">
+                        <i class="fa" ng-class="cluster._showAlerts ? 'fa-caret-down' : 'fa-caret-right'"></i> View Included Alerts
+                    </a>
+                    <div ng-if="cluster._showAlerts" style="margin-top: 10px; background: #0f172a; padding: 10px; border-radius: 4px; border: 1px solid #334155; max-height: 150px; overflow-y: auto;">
+                        <div ng-repeat="alertId in cluster.alert_ids" style="font-family: monospace; font-size: 0.85em; color: #94a3b8; padding: 3px 0; border-bottom: 1px solid #1e293b;">
+                            <i class="fa fa-angle-right" style="margin-right: 5px;"></i> {{alertId}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer nv-modal-footer" style="background: #0f172a; border-top: 1px solid #1e293b;">
+            <button class="btn" ng-click="close()" style="background: transparent; color: #94a3b8; border: 1px solid #475569;">Close</button>
+        </div>
+    </script>
+</div>

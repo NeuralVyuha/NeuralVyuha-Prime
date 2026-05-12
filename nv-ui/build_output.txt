@@ -1,0 +1,107 @@
+Running "clean:dist" (clean) task
+>> 42 paths cleaned.
+
+Running "injector:local_dependencies" (injector) task
+Missing option `template`, using `dest` as template instead
+Injecting js files (229 files)
+>> Nothing changed
+
+Running "useminPrepare:html" (useminPrepare) task
+Configuration changed for concat, cssmin
+
+Running "concurrent:dist" (concurrent) task
+
+    Running "copy:images" (copy) task
+    Copied 7 files
+
+    Done.
+
+
+    Execution Time (2026-02-28 19:02:00 UTC+5:30)
+    loading tasks               137ms  ██████████████████████████ 74%
+    loading grunt-contrib-copy    5ms  █ 3%
+    copy:images                  42ms  ████████ 23%
+    Total 184ms
+
+    Running "copy:styles" (copy) task
+    Copied 20 files
+
+    Done.
+
+
+    Execution Time (2026-02-28 19:02:00 UTC+5:30)
+    loading tasks               133ms  █████████████████████ 61%
+    loading grunt-contrib-copy    5ms  █ 2%
+    copy:styles                  79ms  █████████████ 36%
+    Total 217ms
+
+    Running "svgmin:dist" (svgmin) task
+    Total saved: 4.86 kB
+
+    Done.
+
+
+    Execution Time (2026-02-28 19:02:00 UTC+5:30)
+    loading tasks         135ms  ████████ 19%
+    loading grunt-svgmin  293ms  █████████████████ 41%
+    svgmin:dist           282ms  ████████████████ 40%
+    Total 711ms
+
+Running "postcss:server" (postcss) task
+>> 20 processed stylesheets created.
+
+Running "postcss:dist" (postcss) task
+>> 20 processed stylesheets created.
+
+Running "ngtemplates:dist" (ngtemplates) task
+File .tmp/templateCache.js created.
+Added .tmp/templateCache.js to <!-- build:js scripts/scripts.js -->
+
+Running "concat:generated" (concat) task
+
+Running "ngAnnotate:dist" (ngAnnotate) task
+>> No files provided to the ngAnnotate task.
+
+Running "copy:dist" (copy) task
+Copied 49 files
+
+Running "cssmin:generated" (cssmin) task
+>> 2 files created. 470.99 kB → 411.42 kB
+
+Running "filerev:dist" (filerev) task
+Revved 4 files
+
+Running "usemin:html" (usemin) task
+Replaced 1 reference to assets
+
+Running "usemin:css" (usemin) task
+Replaced 2 references to assets
+
+Running "usemin:js" (usemin) task
+Replaced 2 references to assets
+
+Running "htmlmin:dist" (htmlmin) task
+Minified 1 files
+
+Done.
+
+
+Execution Time (2026-02-28 19:02:00 UTC+5:30)
+loading tasks                   122ms  █ 3%
+clean:dist                       54ms  █ 2%
+injector:local_dependencies      66ms  █ 2%
+loading grunt-concurrent         80ms  █ 2%
+concurrent:dist                  1.2s  ██████████ 34%
+loading grunt-postcss            79ms  █ 2%
+postcss:server                  143ms  ██ 4%
+postcss:dist                     48ms  █ 1%
+loading grunt-...lar-templates  194ms  ██ 5%
+ngtemplates:dist                278ms  ███ 8%
+concat:generated                207ms  ██ 6%
+loading grunt-ng-annotate        36ms  █ 1%
+copy:dist                       124ms  ██ 3%
+cssmin:generated                628ms  ██████ 18%
+filerev:dist                     38ms  █ 1%
+usemin:js                       127ms  ██ 4%
+Total 3.6s
+

@@ -1,0 +1,16 @@
+<section class="sidebar">
+	<!-- Sidebar Menu -->
+	<ul class="sidebar-menu">
+		<li class="header">MAIN MENU</li>
+		<li ui-sref-active="active"><a ui-sref="app.index"><i class="fa fa-home"></i> <span>Home</span></a></li>
+		<li ui-sref-active="active"><a ui-sref="app.cases"><i class="fa fa-briefcase"></i> <span>Cases</span></a></li>
+		<li ui-sref-active="active"><a ui-sref="app.alert-list"><i class="fa fa-bell"></i> <span>Alerts</span></a></li>
+		<li ui-sref-active="active"><a ui-sref="app.nv-incidents"><i class="fa fa-connectdevelop"></i> <span>NeuralVyuha
+					Incidents</span></a></li>
+		<li ui-sref-active="active"><a ui-sref="app.vyuha-graph"><i class="fa fa-share-alt"></i> <span>Vyuha Graph</span></a></li>
+		<li><a href="" ng-click="$root.$broadcast('nv:toggleCopilot', {})" class="text-teal"><i class="fa fa-brain text-teal"></i> <span style="color: #10b981; font-weight: bold;">Threat Copilot (AI)</span></a></li>
+		<li class="header">SUPPORT</li>
+		<li ui-sref-active="active"><a ui-sref="app.nv-help"><i class="fa fa-question-circle"></i> <span>Help
+					Center</span></a></li>
+	</ul>
+</section>

@@ -1,0 +1,76 @@
+<div class="modal-header bg-primary" style="border-radius: 4px 4px 0 0;">
+    <h3 class="modal-title" style="margin: 0; font-size: 18px; font-weight: 500;">
+        <i class="fa fa-tag"></i> Add Intelligence Metadata
+    </h3>
+</div>
+<div class="modal-body" style="background: #fdfdfd;">
+    <div class="form-horizontal pad10">
+        <div class="alert alert-info" style="border-left: 4px solid #31708f; background: #d9edf7; padding: 10px 15px;">
+            Enriching Case <strong>#{{caze.number}}</strong>: {{caze.title}}
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label class="col-sm-3 control-label" style="text-align: right; color: #555;">Field Name</label>
+            <div class="col-sm-9">
+                <p class="form-control-static" style="margin: 0; padding-top: 7px;">
+                    <strong style="font-size: 15px; color: #333;">{{data.name}}</strong>
+                </p>
+                <div class="text-muted" style="font-size: 12px; margin-top: 4px;">{{data.description}}</div>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+            <label class="col-sm-3 control-label" style="text-align: right; color: #555;">Value <span
+                    class="text-danger">*</span></label>
+            <div class="col-sm-9">
+                <!-- String Input -->
+                <input class="form-control" ng-if="data.type === 'string'" type="text" ng-model="customValue.val"
+                    placeholder="Enter text..." autofocus style="box-shadow: inset 0 1px 1px rgba(0,0,0,.075);">
+
+                <!-- Integer/Number Input -->
+                <input class="form-control" ng-if="data.type === 'integer' || data.type === 'number'" type="number"
+                    step="1" ng-model="customValue.val" placeholder="Enter whole number..." autofocus
+                    style="box-shadow: inset 0 1px 1px rgba(0,0,0,.075);">
+
+                <!-- Float Input -->
+                <input class="form-control" ng-if="data.type === 'float'" type="number" step="any"
+                    ng-model="customValue.val" placeholder="Enter decimal number..." autofocus
+                    style="box-shadow: inset 0 1px 1px rgba(0,0,0,.075);">
+
+                <!-- Boolean Input -->
+                <select class="form-control" ng-if="data.type === 'boolean'" ng-model="customValue.val"
+                    ng-options="o.v as o.l for o in [{v:true, l:'True'}, {v:false, l:'False'}]" autofocus
+                    style="box-shadow: inset 0 1px 1px rgba(0,0,0,.075);">
+                    <option value="" disabled>Select True or False...</option>
+                </select>
+
+                <!-- Date Input -->
+                <input class="form-control" ng-if="data.type === 'date'" type="date" ng-model="customValue.val"
+                    autofocus style="box-shadow: inset 0 1px 1px rgba(0,0,0,.075);">
+
+                <!-- Fallback Input -->
+                <input class="form-control"
+                    ng-if="['string', 'integer', 'number', 'float', 'boolean', 'date'].indexOf(data.type) === -1"
+                    type="text" ng-model="customValue.val" placeholder="Enter value..." autofocus
+                    style="box-shadow: inset 0 1px 1px rgba(0,0,0,.075);">
+
+                <p class="help-block" style="font-size: 12px; margin-bottom: 0px;" ng-if="data.type === 'string'"><i
+                        class="fa fa-info-circle"></i> Type: Text string.</p>
+                <p class="help-block" style="font-size: 12px; margin-bottom: 0px;"
+                    ng-if="data.type === 'integer' || data.type === 'number' || data.type === 'float'"><i
+                        class="fa fa-info-circle"></i> Type:
+                    Numeric value.</p>
+                <p class="help-block" style="font-size: 12px; margin-bottom: 0px;"
+                    ng-if="['string', 'integer', 'number', 'float', 'boolean', 'date'].indexOf(data.type) === -1"><i
+                        class="fa fa-info-circle"></i> Type: {{data.type || 'Custom'}}.</p>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal-footer" style="border-top: 1px solid #e5e5e5; background: #f5f5f5; border-radius: 0 0 4px 4px;">
+    <button class="btn btn-default" ng-click="cancel()" type="button" style="padding: 6px 16px;"><i
+            class="fa fa-times"></i> Cancel</button>
+    <button class="btn btn-primary" type="button" ng-click="confirm()"
+        ng-disabled="customValue.val === null || customValue.val === undefined || customValue.val === ''"
+        style="padding: 6px 16px;"><i class="fa fa-check"></i> Save Metadata</button>
+</div>

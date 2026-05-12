@@ -1,0 +1,619 @@
+<!-- NeuralVyuha Ingest Command Center — NASA-Grade Control Panel -->
+<div class="nv-cmd-center">
+
+    <!-- ═══ Confirmation Modal ═══ -->
+    <div class="nv-confirm-overlay" ng-if="vm.showConfirm">
+        <div class="nv-confirm-box">
+            <i class="fa fa-exclamation-triangle nv-warn-icon"></i>
+            <p>{{vm.confirmMessage}}</p>
+            <div class="nv-confirm-actions">
+                <button class="nv-btn-danger" ng-click="vm.executeConfirm()">CONFIRM</button>
+                <button class="nv-btn-ghost" ng-click="vm.cancelConfirm()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TOP ROW: Telemetry Status Cards ═══ -->
+    <div class="nv-telemetry-row">
+        <div class="nv-tel-card" ng-class="{'nv-glow-danger': vm.engine.paused}">
+            <div class="nv-tel-icon"><i class="fa fa-heartbeat"></i></div>
+            <div class="nv-tel-data">
+                <span class="nv-tel-val" ng-class="{'text-danger': vm.engine.paused}">
+                    {{vm.engine.paused ? 'HALTED' : 'ACTIVE'}}
+                </span>
+                <span class="nv-tel-label">ENGINE STATUS</span>
+            </div>
+        </div>
+        <div class="nv-tel-card nv-glow-cyan">
+            <div class="nv-tel-icon"><i class="fa fa-tachometer"></i></div>
+            <div class="nv-tel-data">
+                <span class="nv-tel-val">{{vm.metrics.eps | number:1}}</span>
+                <span class="nv-tel-label">EVENTS / SEC</span>
+            </div>
+        </div>
+        <div class="nv-tel-card">
+            <div class="nv-tel-icon"><i class="fa fa-clock-o"></i></div>
+            <div class="nv-tel-data">
+                <span class="nv-tel-val">{{vm.formatUptime(vm.metrics.uptime_seconds)}}</span>
+                <span class="nv-tel-label">UPTIME</span>
+            </div>
+        </div>
+        <div class="nv-tel-card">
+            <div class="nv-tel-icon"><i class="fa fa-microchip"></i></div>
+            <div class="nv-tel-data">
+                <span class="nv-tel-val">{{vm.metrics.cpu_percent}}%</span>
+                <span class="nv-tel-label">CPU</span>
+            </div>
+        </div>
+        <div class="nv-tel-card">
+            <div class="nv-tel-icon"><i class="fa fa-server"></i></div>
+            <div class="nv-tel-data">
+                <span class="nv-tel-val">{{vm.metrics.memory_mb}} MB</span>
+                <span class="nv-tel-label">MEMORY</span>
+            </div>
+        </div>
+        <div class="nv-tel-card">
+            <div class="nv-tel-icon"><i class="fa fa-stream"></i></div>
+            <div class="nv-tel-data">
+                <span class="nv-tel-val">{{vm.stats.activeSources}}</span>
+                <span class="nv-tel-label">ACTIVE SOURCES</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ ENGINE CONTROLS ROW ═══ -->
+    <div class="nv-engine-controls">
+        <div class="nv-engine-title">
+            <i class="fa fa-cogs"></i> ENGINE CONTROL PLANE
+        </div>
+        <div class="nv-control-pills">
+            <!-- Master Switch -->
+            <button class="nv-pill"
+                ng-class="{'nv-pill-danger': !vm.engine.paused, 'nv-pill-success': vm.engine.paused}"
+                ng-click="vm.toggleMasterSwitch()">
+                <i class="fa" ng-class="{'fa-pause': !vm.engine.paused, 'fa-play': vm.engine.paused}"></i>
+                {{vm.engine.paused ? 'RESUME ENGINE' : 'HALT ENGINE'}}
+            </button>
+
+            <!-- Circuit Breaker -->
+            <button class="nv-pill"
+                ng-class="{'nv-pill-warning': !vm.engine.circuit_breaker, 'nv-pill-success': vm.engine.circuit_breaker}"
+                ng-click="vm.toggleCircuitBreaker()">
+                <i class="fa fa-bolt"></i>
+                {{vm.engine.circuit_breaker ? 'RESET BREAKER' : 'TRIP BREAKER'}}
+            </button>
+
+            <!-- Dry Run -->
+            <button class="nv-pill" ng-class="{'nv-pill-active': vm.engine.dry_run}" ng-click="vm.toggleDryRun()">
+                <i class="fa fa-flask"></i>
+                DRY RUN {{vm.engine.dry_run ? 'ON' : 'OFF'}}
+            </button>
+
+            <!-- Log Level Dropdown -->
+            <div class="nv-log-level-group">
+                <span class="nv-log-label"><i class="fa fa-file-text-o"></i> LOG:</span>
+                <select class="nv-log-select" ng-model="vm.engine.log_level"
+                    ng-change="vm.changeLogLevel(vm.engine.log_level)">
+                    <option ng-repeat="l in vm.logLevels" value="{{l}}">{{l}}</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Service Health Dots -->
+        <div class="nv-health-dots">
+            <span class="nv-dot" ng-class="{'active': vm.engine.kafka_connected}" title="Kafka"></span> Kafka
+            <span class="nv-dot" ng-class="{'active': vm.engine.redis_connected}" title="Redis"></span> Redis
+            <span class="nv-dot" ng-class="{'active': vm.engine.postgres_connected}" title="Postgres"></span> Postgres
+            <span class="nv-dot" ng-class="{'active': vm.engine.minio_connected}" title="MinIO"></span> MinIO
+        </div>
+    </div>
+
+    <!-- ═══ TAB NAVIGATION ═══ -->
+    <div class="nv-cmd-tabs">
+        <button ng-class="{'active': vm.activeTab === 'dashboard'}" ng-click="vm.activeTab = 'dashboard'">
+            <i class="fa fa-television"></i> Live Stream
+        </button>
+        <button ng-class="{'active': vm.activeTab === 'sources'}" ng-click="vm.activeTab = 'sources'">
+            <i class="fa fa-sitemap"></i> Source Controls
+        </button>
+        <button ng-class="{'active': vm.activeTab === 'rules'}" ng-click="vm.activeTab = 'rules'">
+            <i class="fa fa-filter"></i> Action Rules
+        </button>
+        <button ng-class="{'active': vm.activeTab === 'dedup'}" ng-click="vm.activeTab = 'dedup'">
+            <i class="fa fa-copy"></i> Deduplication
+        </button>
+        <button ng-class="{'active': vm.activeTab === 'correlation'}"
+            ng-click="vm.activeTab = 'correlation'; vm.loadCorrelationData()">
+            <i class="fa fa-share-alt"></i> The Detective
+        </button>
+    </div>
+
+    <!-- ═══ TAB: LIVE STREAM HUD ═══ -->
+    <div class="nv-tab-content" ng-if="vm.activeTab === 'dashboard'">
+        <div class="nv-live-hud">
+            <div class="nv-hud-header">
+                <span class="nv-hud-title"><i class="fa fa-rss nv-blink"></i> LIVE INGESTION FEED</span>
+                <span class="nv-hud-badge">{{vm.liveStream.length}} events</span>
+            </div>
+            <div class="nv-hud-body">
+                <div class="nv-hud-empty" ng-if="vm.liveStream.length === 0">
+                    <i class="fa fa-satellite-dish"></i>
+                    <p>Waiting for events...</p>
+                </div>
+                <div class="nv-hud-row" ng-repeat="evt in vm.liveStream"
+                    ng-class="'nv-status-' + vm.getStatusClass(evt.status)">
+                    <span class="nv-hud-ts">{{evt.timestamp | date:'HH:mm:ss'}}</span>
+                    <span class="nv-hud-source"><i class="fa {{vm.getSourceIcon(evt.source)}}"></i>
+                        {{evt.source}}</span>
+                    <span class="nv-hud-title-text">{{evt.title}}</span>
+                    <span class="nv-hud-sev nv-sev-{{vm.getSeverityClass(evt.severity)}}">S{{evt.severity}}</span>
+                    <span class="nv-hud-status">{{evt.status}}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Counters -->
+        <div class="nv-counter-row">
+            <div class="nv-counter">
+                <span class="nv-counter-val">{{vm.metrics.events_total | number}}</span>
+                <span class="nv-counter-label">INGESTED</span>
+            </div>
+            <div class="nv-counter nv-counter-warn">
+                <span class="nv-counter-val">{{vm.metrics.events_dropped | number}}</span>
+                <span class="nv-counter-label">DROPPED</span>
+            </div>
+            <div class="nv-counter nv-counter-cyan">
+                <span class="nv-counter-val">{{vm.metrics.events_archived | number}}</span>
+                <span class="nv-counter-label">ARCHIVED</span>
+            </div>
+            <div class="nv-counter nv-counter-green">
+                <span class="nv-counter-val">{{vm.metrics.events_promoted | number}}</span>
+                <span class="nv-counter-label">PROMOTED</span>
+            </div>
+            <div class="nv-counter nv-counter-purple">
+                <span class="nv-counter-val">{{vm.metrics.events_behavioral_triggered | number}}</span>
+                <span class="nv-counter-label">BEHAVIORAL</span>
+            </div>
+            <div class="nv-counter nv-counter-orange">
+                <span class="nv-counter-val">{{vm.metrics.events_rate_limited | number}}</span>
+                <span class="nv-counter-label">RATE LIMITED</span>
+            </div>
+            <div class="nv-counter nv-counter-gray">
+                <span class="nv-counter-val">{{vm.metrics.events_deduped | number}}</span>
+                <span class="nv-counter-label">DEDUPED</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: SOURCE CONTROLS ═══ -->
+    <div class="nv-tab-content" ng-if="vm.activeTab === 'sources'">
+        <div class="nv-policy-grid">
+            <div class="nv-policy-card" ng-repeat="policy in vm.policies"
+                ng-class="{'nv-card-disabled': !policy.enabled}">
+                <div class="nv-card-head">
+                    <div class="nv-source-icon"><i class="fa {{vm.getSourceIcon(policy.source)}}"></i></div>
+                    <div class="nv-source-info">
+                        <h3>{{policy.source | uppercase}}</h3>
+                    </div>
+                    <div class="nv-kill-switch">
+                        <label class="nv-switch">
+                            <input type="checkbox" ng-checked="policy.enabled" ng-click="vm.toggleSource(policy)">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="nv-card-body">
+                    <div class="nv-control-row">
+                        <div class="nv-control-label">
+                            <span>Rate Limit (EPS)</span>
+                            <span class="nv-val-badge">{{policy.eps}}</span>
+                        </div>
+                        <input type="range" min="1" max="5000" step="10" ng-model="policy.eps"
+                            ng-change="vm.updateLimit(policy)" ng-disabled="!policy.enabled">
+                    </div>
+                    <div class="nv-control-row">
+                        <div class="nv-control-label">
+                            <span>Max Payload (KB)</span>
+                            <span class="nv-val-badge">{{policy.maxPayload}}</span>
+                        </div>
+                        <input type="range" min="128" max="10240" step="128" ng-model="policy.maxPayload"
+                            ng-change="vm.updateLimit(policy)" ng-disabled="!policy.enabled">
+                    </div>
+                </div>
+                <div class="nv-card-foot">
+                    <span class="nv-ts">Last: {{policy.updatedAt | date:'shortTime'}}</span>
+                    <span class="nv-status-text" ng-if="!policy.enabled">BLOCKED</span>
+                    <span class="nv-status-text good" ng-if="policy.enabled">ACTIVE</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: ACTION RULES (Multi-Action: DROP / LOG / ALERT) ═══ -->
+    <div class="nv-tab-content" ng-if="vm.activeTab === 'rules'">
+        <div class="nv-rules-section">
+            <!-- Add Rule Form -->
+            <div class="nv-add-rule-form">
+                <h4><i class="fa fa-plus-circle"></i> Add Action Rule</h4>
+                <div class="nv-rule-inputs">
+                    <input type="text" placeholder="Field (e.g. rule.level)" ng-model="vm.newRule.field_path"
+                        class="nv-input">
+                    <select ng-model="vm.newRule.operator" class="nv-input nv-select">
+                        <option value="eq">equals</option>
+                        <option value="neq">not equals</option>
+                        <option value="contains">contains</option>
+                        <option value="not_contains">not contains</option>
+                        <option value="gt">greater than</option>
+                        <option value="gte">≥ (gte)</option>
+                        <option value="lt">less than</option>
+                        <option value="lte">≤ (lte)</option>
+                        <option value="regex">regex</option>
+                        <option value="cidr">CIDR match</option>
+                        <option value="in">in list</option>
+                        <option value="exists">field exists</option>
+                        <option value="startswith">starts with</option>
+                        <option value="endswith">ends with</option>
+                    </select>
+                    <input type="text" placeholder="Value" ng-model="vm.newRule.value" class="nv-input nv-input-wide">
+                </div>
+                <div class="nv-rule-inputs nv-rule-inputs-row2">
+                    <!-- Action Selector -->
+                    <div class="nv-action-selector">
+                        <label>Action:</label>
+                        <div class="nv-action-buttons">
+                            <button class="nv-action-btn" ng-class="{'nv-action-drop': vm.newRule.action === 'DROP'}"
+                                ng-click="vm.newRule.action = 'DROP'">
+                                <i class="fa fa-ban"></i> DROP
+                            </button>
+                            <button class="nv-action-btn" ng-class="{'nv-action-log': vm.newRule.action === 'LOG'}"
+                                ng-click="vm.newRule.action = 'LOG'">
+                                <i class="fa fa-archive"></i> LOG
+                            </button>
+                            <button class="nv-action-btn" ng-class="{'nv-action-alert': vm.newRule.action === 'ALERT'}"
+                                ng-click="vm.newRule.action = 'ALERT'">
+                                <i class="fa fa-bell"></i> ALERT
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Priority -->
+                    <div class="nv-priority-input">
+                        <label>Priority:</label>
+                        <input type="number" ng-model="vm.newRule.priority" min="0" max="100"
+                            class="nv-input nv-input-sm" placeholder="0">
+                    </div>
+                    <!-- Severity Override (only for ALERT) -->
+                    <div class="nv-severity-input" ng-if="vm.newRule.action === 'ALERT'">
+                        <label>Severity Override:</label>
+                        <select ng-model="vm.newRule.severity_override" class="nv-input nv-select nv-select-sm">
+                            <option value="">— Auto —</option>
+                            <option value="1">1 - Info</option>
+                            <option value="2">2 - Low</option>
+                            <option value="3">3 - Medium</option>
+                            <option value="4">4 - Critical</option>
+                        </select>
+                    </div>
+                    <input type="text" placeholder="Description" ng-model="vm.newRule.description"
+                        class="nv-input nv-input-wide">
+                    <button class="nv-btn-primary" ng-click="vm.addDropRule()">
+                        <i class="fa fa-plus"></i> ADD RULE
+                    </button>
+                </div>
+            </div>
+
+            <!-- Rules Table -->
+            <div class="nv-rules-table" ng-if="vm.dropRules.length > 0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Active</th>
+                            <th>Action</th>
+                            <th>Priority</th>
+                            <th>Field</th>
+                            <th>Operator</th>
+                            <th>Value</th>
+                            <th>Sev.</th>
+                            <th>Description</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="rule in vm.dropRules" ng-class="{'nv-rule-disabled': !rule.active}">
+                            <td>
+                                <label class="nv-switch nv-switch-sm">
+                                    <input type="checkbox" ng-checked="rule.active" ng-click="vm.toggleDropRule(rule)">
+                                    <span class="slider round"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <span class="nv-action-badge"
+                                    ng-class="'nv-action-badge-' + (rule.action || 'DROP').toLowerCase()">
+                                    <i class="fa"
+                                        ng-class="{'fa-ban': rule.action === 'DROP', 'fa-archive': rule.action === 'LOG', 'fa-bell': rule.action === 'ALERT'}"></i>
+                                    {{rule.action || 'DROP'}}
+                                </span>
+                            </td>
+                            <td><span class="nv-priority-badge">{{rule.priority || 0}}</span></td>
+                            <td><code>{{rule.field}}</code></td>
+                            <td><span class="nv-op-badge">{{rule.operator}}</span></td>
+                            <td><code>{{rule.value}}</code></td>
+                            <td>
+                                <span ng-if="rule.severityOverride"
+                                    class="nv-hud-sev nv-sev-{{vm.getSeverityClass(rule.severityOverride)}}">S{{rule.severityOverride}}</span>
+                                <span ng-if="!rule.severityOverride" class="nv-muted">—</span>
+                            </td>
+                            <td>{{rule.description || '—'}}</td>
+                            <td>
+                                <button class="nv-btn-icon-danger" ng-click="vm.deleteDropRule(rule)"
+                                    title="Delete Rule">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="nv-rules-empty" ng-if="vm.dropRules.length === 0">
+                <i class="fa fa-filter"></i>
+                <p>No action rules configured. All events pass through to the pipeline.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: DEDUPLICATION (The Architect) ═══ -->
+    <div class="nv-tab-content" ng-if="vm.activeTab === 'dedup'">
+        <div class="nv-rules-section">
+            <!-- Add Dedup Config Form -->
+            <div class="nv-add-rule-form">
+                <h4><i class="fa fa-fingerprint"></i> Configure Event Fingerprinting</h4>
+                <div class="nv-rule-inputs">
+                    <input type="text" placeholder="Source (e.g. wazuh)" ng-model="vm.newDedup.source" class="nv-input">
+                    <input type="text" placeholder="Fields (comma-separated, e.g. rule.id, data.srcip)"
+                        ng-model="vm.newDedup.fields_str" class="nv-input nv-input-wide">
+                    <input type="number" placeholder="Window (seconds)" ng-model="vm.newDedup.window" class="nv-input"
+                        style="width: 120px;">
+                    <button class="nv-btn-success" ng-click="vm.addDedupConfig()">
+                        <i class="fa fa-plus"></i> ADD CONFIG
+                    </button>
+                </div>
+                <p class="nv-help-text" style="color: rgba(255,255,255,0.6); font-size: 0.9em; margin-top: 10px;">
+                    <i class="fa fa-info-circle"></i> Deduplication creates a unique hash from these fields.
+                    If the same hash repeats within the window, subsequent events are tagged as <b>DEDUPED</b>.
+                </p>
+            </div>
+
+            <!-- Dedup Configs Table -->
+            <div class="nv-rules-table-container">
+                <table class="nv-rules-table">
+                    <thead>
+                        <tr>
+                            <th>SOURCE</th>
+                            <th>FINGERPRINT FIELDS</th>
+                            <th>WINDOW</th>
+                            <th>STATUS</th>
+                            <th>CREATED</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="config in vm.dedupConfigs">
+                            <td><span class="nv-source-tag">{{config.source | uppercase}}</span></td>
+                            <td>
+                                <span class="nv-field-badge" ng-repeat="field in config.fields"
+                                    style="background: rgba(0,255,255,0.1); color: #0ff; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,255,255,0.2); margin-right: 5px; font-size: 0.8em;">{{field}}</span>
+                            </td>
+                            <td>{{config.window}}s</td>
+                            <td>
+                                <span class="nv-badge" ng-class="config.active ? 'nv-badge-success' : 'nv-badge-gray'">
+                                    {{config.active ? 'ACTIVE' : 'DISABLED'}}
+                                </span>
+                            </td>
+                            <td><small>{{config.createdAt | date:'short'}}</small></td>
+                            <td>
+                                <button class="nv-icon-btn del" ng-click="vm.deleteDedupConfig(config.id)"
+                                    title="Delete">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr ng-if="vm.dedupConfigs.length === 0">
+                            <td colspan="6" class="text-center">No deduplication rules configured.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TAB: THE DETECTIVE (Cross-Source Correlation) ═══ -->
+    <div class="nv-tab-content" ng-if="vm.activeTab === 'correlation'">
+        <div class="nv-rules-section">
+
+            <!-- Rule Builder -->
+            <div class="nv-add-rule-form">
+                <h4><i class="fa fa-share-alt"></i> Build Correlation Rule</h4>
+                <div class="nv-rule-inputs">
+                    <input type="text" placeholder="Rule Name" ng-model="vm.newCorr.name"
+                        class="nv-input nv-input-wide">
+                    <input type="text" placeholder="Source A (e.g. wazuh)" ng-model="vm.newCorr.source_a"
+                        class="nv-input">
+                    <input type="text" placeholder="Source B (e.g. suricata)" ng-model="vm.newCorr.source_b"
+                        class="nv-input">
+                </div>
+                <div class="nv-rule-inputs" style="margin-top: 10px;">
+                    <input type="text" placeholder="Match Field (e.g. data.srcip)" ng-model="vm.newCorr.match_field"
+                        class="nv-input">
+                    <input type="number" placeholder="Window (sec)" ng-model="vm.newCorr.time_window" class="nv-input"
+                        style="width:110px;">
+                    <input type="number" placeholder="Min A" ng-model="vm.newCorr.min_count_a" class="nv-input"
+                        style="width:80px;">
+                    <input type="number" placeholder="Min B" ng-model="vm.newCorr.min_count_b" class="nv-input"
+                        style="width:80px;">
+                </div>
+                <div class="nv-rule-inputs" style="margin-top: 10px;">
+                    <select ng-model="vm.newCorr.mitre_tactic" class="nv-input nv-select">
+                        <option value="Unknown">MITRE Tactic…</option>
+                        <option value="Reconnaissance">Reconnaissance</option>
+                        <option value="Initial Access">Initial Access</option>
+                        <option value="Execution">Execution</option>
+                        <option value="Persistence">Persistence</option>
+                        <option value="Privilege Escalation">Privilege Escalation</option>
+                        <option value="Defense Evasion">Defense Evasion</option>
+                        <option value="Credential Access">Credential Access</option>
+                        <option value="Lateral Movement">Lateral Movement</option>
+                        <option value="Collection">Collection</option>
+                        <option value="Command and Control">Command and Control</option>
+                        <option value="Exfiltration">Exfiltration</option>
+                        <option value="Impact">Impact</option>
+                    </select>
+                    <select ng-model="vm.newCorr.action_type" class="nv-input nv-select">
+                        <option value="CREATE_CASE">CREATE CASE</option>
+                        <option value="PROMOTE_ALERT">PROMOTE ALERT</option>
+                        <option value="LOG_ONLY">LOG ONLY</option>
+                    </select>
+                    <select ng-model="vm.newCorr.severity_override" class="nv-input nv-select">
+                        <option value="1">S1 - Low</option>
+                        <option value="2">S2 - Medium</option>
+                        <option value="3" selected>S3 - High</option>
+                        <option value="4">S4 - Critical</option>
+                    </select>
+                    <button class="nv-btn-success" ng-click="vm.addCorrelationRule()">
+                        <i class="fa fa-plus"></i> ADD RULE
+                    </button>
+                </div>
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.85em; margin-top: 10px;">
+                    <i class="fa fa-info-circle"></i>
+                    The Detective fires when it sees <b>Min A</b> events from <b>Source A</b> AND <b>Min B</b> events
+                    from <b>Source B</b>
+                    sharing the same <b>Match Field</b> value within the time window.
+                </p>
+            </div>
+
+            <!-- Active Rules Table -->
+            <div
+                style="margin-bottom: 8px; font-size: 0.85em; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fa fa-list"></i> Active Correlation Rules ({{vm.corrRules.length}})
+            </div>
+            <div class="nv-rules-table-container">
+                <table class="nv-rules-table">
+                    <thead>
+                        <tr>
+                            <th>RULE</th>
+                            <th>SOURCES</th>
+                            <th>MATCH FIELD</th>
+                            <th>WINDOW</th>
+                            <th>MITRE TACTIC</th>
+                            <th>ACTION</th>
+                            <th>TRIGGERS</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="rule in vm.corrRules">
+                            <td>
+                                <span style="font-weight:600; color: var(--nv-text-primary);">{{rule.name}}</span><br>
+                                <small style="color:rgba(255,255,255,0.4);">{{rule.description | limitTo:60}}</small>
+                            </td>
+                            <td>
+                                <span class="nv-source-tag">{{rule.source_a | uppercase}}</span>
+                                <i class="fa fa-arrows-h" style="color: #718096; margin: 0 4px;"></i>
+                                <span class="nv-source-tag">{{rule.source_b | uppercase}}</span>
+                            </td>
+                            <td><code style="font-size: 0.8em; color:#0ff;">{{rule.match_field}}</code></td>
+                            <td>{{rule.time_window}}s</td>
+                            <td>
+                                <span class="nv-mitre-badge"
+                                    style="background: rgba(139,92,246,0.15); color: #9f7aea; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(139,92,246,0.3); font-size: 0.8em;">
+                                    {{rule.mitre_tactic}}
+                                </span>
+                            </td>
+                            <td>
+                                <span ng-class="{
+                                    'nv-badge-danger': rule.action_type === 'CREATE_CASE',
+                                    'nv-badge-warn': rule.action_type === 'PROMOTE_ALERT',
+                                    'nv-badge-gray': rule.action_type === 'LOG_ONLY'
+                                }" class="nv-badge" style="padding: 2px 8px; border-radius: 4px; font-size: 0.8em;">
+                                    {{rule.action_type}}
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span style="font-size: 1.1em; font-weight:700; color: #f59e0b;">{{rule.incident_count
+                                    || 0}}</span>
+                            </td>
+                            <td>
+                                <label class="nv-switch">
+                                    <input type="checkbox" ng-checked="rule.is_active"
+                                        ng-click="vm.toggleCorrelationRule(rule)">
+                                    <span class="slider round"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <button class="nv-icon-btn del" ng-click="vm.deleteCorrelationRule(rule.id)"
+                                    title="Delete Rule">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr ng-if="vm.corrRules.length === 0">
+                            <td colspan="9" class="text-center" style="color: rgba(255,255,255,0.3);">No correlation
+                                rules configured. Add a rule above to start The Detective.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Recent Incidents (Audit Log) -->
+            <div
+                style="margin: 20px 0 8px; font-size: 0.85em; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px;">
+                <i class="fa fa-bolt"></i> Recent Correlation Triggers (Last {{vm.corrIncidents.length}})
+            </div>
+            <div class="nv-rules-table-container">
+                <table class="nv-rules-table">
+                    <thead>
+                        <tr>
+                            <th>TIME</th>
+                            <th>RULE</th>
+                            <th>MATCH VALUE</th>
+                            <th>MITRE</th>
+                            <th>SCORE</th>
+                            <th>ACTION</th>
+                            <th>CASE ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="inc in vm.corrIncidents">
+                            <td><small>{{inc.fired_at | date:'HH:mm:ss'}}</small></td>
+                            <td style="font-weight:600;">{{inc.rule_name}}</td>
+                            <td><code style="color:#0ff; font-size:0.8em;">{{inc.match_value}}</code></td>
+                            <td><small style="color:#9f7aea;">{{inc.mitre_tactic}}</small></td>
+                            <td>
+                                <span style="font-weight:700;"
+                                    ng-style="{'color': inc.threat_score >= 75 ? '#f87171' : inc.threat_score >= 50 ? '#f59e0b' : '#22d3ee'}">
+                                    {{inc.threat_score}}/100
+                                </span>
+                            </td>
+                            <td><small>{{inc.action_taken}}</small></td>
+                            <td>
+                                <small ng-if="inc.case_id" style="color: #48bb78;"><i class="fa fa-check-circle"></i>
+                                    {{inc.case_id | limitTo:12}}</small>
+                                <small ng-if="!inc.case_id" style="color: rgba(255,255,255,0.3);">—</small>
+                            </td>
+                        </tr>
+                        <tr ng-if="vm.corrIncidents.length === 0">
+                            <td colspan="7" class="text-center" style="color: rgba(255,255,255,0.3);">No incidents
+                                triggered yet. The Detective is watching.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Footer Banner ═══ -->
+    <div class="nv-safety-banner">
+        <i class="fa fa-info-circle"></i>
+        <span>Engine controls propagate to all <code>nv-ingest</code> replicas via Redis state sync. Changes take effect
+            within 3 seconds.</span>
+    </div>
+
+</div>

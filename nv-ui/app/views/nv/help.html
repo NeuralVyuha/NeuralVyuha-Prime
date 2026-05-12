@@ -1,0 +1,689 @@
+<!--
+  help.html — NeuralVyuha Help Center
+  Controller: NvHelpCtrl (controllerAs: vm)
+-->
+<div class="nv-help-page">
+
+    <!-- Header -->
+    <div class="nv-help-header">
+        <div class="nv-help-header-icon">❓</div>
+        <div class="nv-help-header-text">
+            <h1>Help Center</h1>
+            <p>Documentation, keyboard shortcuts, and platform reference</p>
+        </div>
+        <div class="nv-help-search-wrap">
+            <input id="nv-help-search" type="text" class="nv-help-search" placeholder="Search help…"
+                ng-model="vm.searchText" />
+        </div>
+    </div>
+
+    <div class="nv-help-layout">
+
+        <!-- Sidebar -->
+        <nav class="nv-help-sidebar">
+            <button class="nv-help-nav-item" ng-class="{active: vm.currentSection === 'intro'}"
+                ng-click="vm.currentSection = 'intro'"> 📖 Introduction</button>
+            <button class="nv-help-nav-item" ng-class="{active: vm.currentSection === 'triage'}"
+                ng-click="vm.currentSection = 'triage'"> 🎯 How to Triage</button>
+            <button class="nv-help-nav-item" ng-class="{active: vm.currentSection === 'timeline'}"
+                ng-click="vm.currentSection = 'timeline'"> 📅 Unified Timeline</button>
+            <button class="nv-help-nav-item" ng-class="{active: vm.currentSection === 'confidence'}"
+                ng-click="vm.currentSection = 'confidence'"> 📊 Confidence Scores</button>
+            <button class="nv-help-nav-item" ng-class="{active: vm.currentSection === 'shortcuts'}"
+                ng-click="vm.currentSection = 'shortcuts'"> ⌨ Keyboard Shortcuts</button>
+            <button class="nv-help-nav-item" ng-class="{active: vm.currentSection === 'api'}"
+                ng-click="vm.currentSection = 'api'"> 🔌 API Reference</button>
+            <button class="nv-help-nav-item" ng-class="{active: vm.currentSection === 'arch'}"
+                ng-click="vm.currentSection = 'arch'"> 🏗 Architecture</button>
+        </nav>
+
+        <!-- Content -->
+        <div class="nv-help-content">
+
+            <!-- Introduction -->
+            <div ng-show="vm.currentSection === 'intro'" class="nv-help-section">
+                <h2>Welcome to NeuralVyuha Prime</h2>
+                <p>NeuralVyuha (NV) is an enterprise-grade Threat Intelligence Platform built on an event-driven, CQRS
+                    microservices architecture. It replaces slow database polling with a
+                    real-time, sub-250ms event spine and automatically groups alerts into meaningful incident clusters
+                    called <strong>Vyuhas</strong>.</p>
+                <div class="nv-help-feature-grid">
+                    <div class="nv-help-feature-card">
+                        <div class="fcard-icon">⚡</div>
+                        <div class="fcard-title">Sub-250ms Ingestion</div>
+                        <div class="fcard-desc">Powered by Redpanda (Kafka-compatible) event bus</div>
+                    </div>
+                    <div class="nv-help-feature-card">
+                        <div class="fcard-icon">🔍</div>
+                        <div class="fcard-title">CQRS Persistence</div>
+                        <div class="fcard-desc">OpenSearch for reads, PostgreSQL for writes — zero lock-in</div>
+                    </div>
+                    <div class="nv-help-feature-card">
+                        <div class="fcard-icon">🧠</div>
+                        <div class="fcard-title">Intelligence Engine</div>
+                        <div class="fcard-desc">Cross-case hash correlation with RED SIGHTING badges</div>
+                    </div>
+                    <div class="nv-help-feature-card">
+                        <div class="fcard-icon">🔴</div>
+                        <div class="fcard-title">Live Presence</div>
+                        <div class="fcard-desc">WebSocket push — analyst avatars, real-time updates</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Triage -->
+            <div ng-show="vm.currentSection === 'triage'" class="nv-help-section">
+                <h2>How to Triage Incidents</h2>
+                <p>Instead of chasing individual alerts, you now triage <strong>Groups</strong> of correlated alerts
+                    (Vyuhas).</p>
+                <ol class="nv-help-steps">
+                    <li><span class="step-num">1</span> Navigate to <strong>Dashboard</strong> and review the Incident
+                        Groups table.</li>
+                    <li><span class="step-num">2</span> Sort by <strong>Severity</strong> or <strong>Confidence</strong>
+                        to prioritize high-risk groups.</li>
+                    <li><span class="step-num">3</span> Click a <strong>Group ID</strong> to view its unified event
+                        timeline.</li>
+                    <li><span class="step-num">4</span> If it represents a real threat, promote it to a
+                        <strong>Case</strong> via the Actions menu.</li>
+                    <li><span class="step-num">5</span> Assign tasks, tag observables, and track results in the Case
+                        view.</li>
+                </ol>
+                <div class="nv-help-tip">
+                    <strong>Tip:</strong> Groups with a RED SIGHTING badge have been seen across multiple cases — treat
+                    them as high priority.
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div ng-show="vm.currentSection === 'timeline'" class="nv-help-section">
+                <h2>Understanding the Unified Timeline</h2>
+                <p>The Timeline combines data from multiple sources into a single chronological view:</p>
+                <div class="nv-help-legend">
+                    <div class="legend-item"><span class="legend-dot blue"></span> <strong>Alerts</strong> — Raw
+                        security events from sensors</div>
+                    <div class="legend-item"><span class="legend-dot green"></span> <strong>Tasks</strong> — Actions
+                        taken by analysts</div>
+                    <div class="legend-item"><span class="legend-dot yellow"></span> <strong>Notes</strong> —
+                        Collaborative comments and observations</div>
+                    <div class="legend-item"><span class="legend-dot red"></span> <strong>Sightings</strong> —
+                        Cross-case indicator matches</div>
+                </div>
+                <p style="margin-top:16px">Events are sorted newest-first. Use the filter bar to narrow by source or
+                    time range.</p>
+            </div>
+
+            <!-- Confidence -->
+            <div ng-show="vm.currentSection === 'confidence'" class="nv-help-section">
+                <h2>Confidence Scores Explained</h2>
+                <p>Every Correlation Rule assigns a <strong>Confidence Score</strong> (0–100) to each group it creates.
+                </p>
+                <div class="nv-conf-table">
+                    <div class="nv-conf-row high">
+                        <div class="conf-range">80–100</div>
+                        <div class="conf-label">HIGH</div>
+                        <div class="conf-desc">Very likely a true positive. <strong>Prioritize immediately.</strong>
+                        </div>
+                    </div>
+                    <div class="nv-conf-row medium">
+                        <div class="conf-range">50–79</div>
+                        <div class="conf-label">MEDIUM</div>
+                        <div class="conf-desc">Requires investigation. Could be suspicious behavior.</div>
+                    </div>
+                    <div class="nv-conf-row low">
+                        <div class="conf-range">0–49</div>
+                        <div class="conf-label">LOW</div>
+                        <div class="conf-desc">Likely noise or informational. Review periodically.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shortcuts -->
+            <div ng-show="vm.currentSection === 'shortcuts'" class="nv-help-section">
+                <h2>Keyboard Shortcuts</h2>
+                <table class="nv-shortcuts-table">
+                    <thead>
+                        <tr>
+                            <th>Shortcut</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><kbd>G</kbd> <kbd>D</kbd></td>
+                            <td>Go to Dashboard</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>G</kbd> <kbd>A</kbd></td>
+                            <td>Go to Alerts</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>G</kbd> <kbd>C</kbd></td>
+                            <td>Go to Cases</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>G</kbd> <kbd>I</kbd></td>
+                            <td>Go to Integrations</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>G</kbd> <kbd>H</kbd></td>
+                            <td>Go to Help</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>/</kbd></td>
+                            <td>Focus search bar</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>Esc</kbd></td>
+                            <td>Close modal / dismiss</td>
+                        </tr>
+                        <tr>
+                            <td><kbd>R</kbd></td>
+                            <td>Refresh current view</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- API Reference -->
+            <div ng-show="vm.currentSection === 'api'" class="nv-help-section">
+                <h2>API Reference</h2>
+                <p>NeuralVyuha exposes a REST API via <code>nv-query</code> (port 8000 / proxied at <code>/api</code>).
+                </p>
+                <table class="nv-api-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Endpoint</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="method post">POST</span></td>
+                            <td><code>/api/login</code></td>
+                            <td>Obtain JWT token</td>
+                        </tr>
+                        <tr>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/api/status</code></td>
+                            <td>Platform status &amp; version</td>
+                        </tr>
+                        <tr>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/api/v1/user/current</code></td>
+                            <td>Current user profile (Bearer token)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/api/alerts</code></td>
+                            <td>List alerts (OpenSearch)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/api/groups</code></td>
+                            <td>List incident groups</td>
+                        </tr>
+                        <tr>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/api/cases</code></td>
+                            <td>List cases (PostgreSQL)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="method get">GET</span></td>
+                            <td><code>/api/graph/case/{id}</code></td>
+                            <td>Visual Vyuha graph data</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p class="nv-help-note">All authenticated endpoints require
+                    <code>Authorization: Bearer &lt;token&gt;</code> header.</p>
+            </div>
+
+            <!-- Architecture -->
+            <div ng-show="vm.currentSection === 'arch'" class="nv-help-section">
+                <h2>Architecture Overview</h2>
+                <div class="nv-arch-grid">
+                    <div class="nv-arch-card">
+                        <div class="arch-icon">📥</div>
+                        <div class="arch-name">nv-ingest</div>
+                        <div class="arch-desc">Event ingestion via Redpanda (Kafka). Sub-250ms.</div>
+                    </div>
+                    <div class="nv-arch-card">
+                        <div class="arch-icon">🔀</div>
+                        <div class="arch-name">nv-dedup</div>
+                        <div class="arch-desc">Deduplication via Redis bloom filter + Postgres.</div>
+                    </div>
+                    <div class="nv-arch-card">
+                        <div class="arch-icon">🔗</div>
+                        <div class="arch-name">nv-correlation</div>
+                        <div class="arch-desc">Rule-based alert grouping engine.</div>
+                    </div>
+                    <div class="nv-arch-card">
+                        <div class="arch-icon">📦</div>
+                        <div class="arch-name">nv-indexer</div>
+                        <div class="arch-desc">Writes events to OpenSearch for fast querying.</div>
+                    </div>
+                    <div class="nv-arch-card">
+                        <div class="arch-icon">🔍</div>
+                        <div class="arch-name">nv-query</div>
+                        <div class="arch-desc">REST API gateway. Auth, RBAC, JWT issuance.</div>
+                    </div>
+                    <div class="nv-arch-card">
+                        <div class="arch-icon">🔌</div>
+                        <div class="arch-name">nv-socket-service</div>
+                        <div class="arch-desc">WebSocket push via Redis pub/sub.</div>
+                    </div>
+                    <div class="nv-arch-card">
+                        <div class="arch-icon">🗃</div>
+                        <div class="arch-name">nv-artifact-service</div>
+                        <div class="arch-desc">MinIO evidence vault with AES-256 encryption.</div>
+                    </div>
+                    <div class="nv-arch-card">
+                        <div class="arch-icon">🌐</div>
+                        <div class="arch-name">nv-node-service</div>
+                        <div class="arch-desc">Cortex &amp; MISP integration hub.</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .nv-help-page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 24px;
+        font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+        color: #e2e8f0;
+    }
+
+    .nv-help-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+    }
+
+    .nv-help-header-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4a9eff, #9b77e8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+    .nv-help-header-text h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #e2e8f0;
+    }
+
+    .nv-help-header-text p {
+        font-size: 13px;
+        color: #718096;
+        margin-top: 2px;
+    }
+
+    .nv-help-search-wrap {
+        margin-left: auto;
+    }
+
+    .nv-help-search {
+        height: 36px;
+        border-radius: 20px;
+        background: #131720;
+        border: 1px solid #1e2436;
+        color: #e2e8f0;
+        font-size: 13px;
+        padding: 0 16px;
+        width: 220px;
+        transition: border-color .15s;
+    }
+
+    .nv-help-search:focus {
+        outline: none;
+        border-color: #4a9eff;
+    }
+
+    .nv-help-layout {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 24px;
+    }
+
+    @media (max-width:700px) {
+        .nv-help-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .nv-help-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .nv-help-nav-item {
+        background: none;
+        border: none;
+        text-align: left;
+        color: #718096;
+        font-size: 13px;
+        padding: 9px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background .15s, color .15s;
+        width: 100%;
+    }
+
+    .nv-help-nav-item:hover {
+        background: #131720;
+        color: #e2e8f0;
+    }
+
+    .nv-help-nav-item.active {
+        background: #131720;
+        color: #4a9eff;
+        font-weight: 600;
+    }
+
+    .nv-help-content {
+        background: #131720;
+        border: 1px solid #1e2436;
+        border-radius: 12px;
+        padding: 28px;
+        min-height: 400px;
+    }
+
+    .nv-help-section h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 14px;
+        color: #e2e8f0;
+    }
+
+    .nv-help-section p {
+        font-size: 13px;
+        color: #a0aec0;
+        line-height: 1.7;
+        margin-bottom: 12px;
+    }
+
+    .nv-help-feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    .nv-help-feature-card {
+        background: #0d0f14;
+        border: 1px solid #1e2436;
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .fcard-icon {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+
+    .fcard-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #e2e8f0;
+    }
+
+    .fcard-desc {
+        font-size: 11px;
+        color: #718096;
+        margin-top: 4px;
+    }
+
+    .nv-help-steps {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .nv-help-steps li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 13px;
+        color: #a0aec0;
+    }
+
+    .step-num {
+        display: inline-flex;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #4a9eff;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .nv-help-tip {
+        background: rgba(74, 158, 255, .1);
+        border: 1px solid rgba(74, 158, 255, .25);
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 13px;
+        color: #a0aec0;
+        margin-top: 16px;
+    }
+
+    .nv-help-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: #a0aec0;
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .legend-dot.blue {
+        background: #4a9eff;
+    }
+
+    .legend-dot.green {
+        background: #3ecf8e;
+    }
+
+    .legend-dot.yellow {
+        background: #f5c842;
+    }
+
+    .legend-dot.red {
+        background: #e05c6a;
+    }
+
+    .nv-conf-table {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .nv-conf-row {
+        display: grid;
+        grid-template-columns: 80px 90px 1fr;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+
+    .nv-conf-row.high {
+        background: rgba(224, 92, 106, .08);
+        border: 1px solid rgba(224, 92, 106, .2);
+    }
+
+    .nv-conf-row.medium {
+        background: rgba(245, 200, 66, .08);
+        border: 1px solid rgba(245, 200, 66, .2);
+    }
+
+    .nv-conf-row.low {
+        background: rgba(113, 128, 150, .08);
+        border: 1px solid rgba(113, 128, 150, .2);
+    }
+
+    .conf-range {
+        font-size: 12px;
+        font-weight: 700;
+        color: #718096;
+        font-family: monospace;
+    }
+
+    .nv-conf-row.high .conf-label {
+        color: #e05c6a;
+        font-weight: 700;
+    }
+
+    .nv-conf-row.medium .conf-label {
+        color: #f5c842;
+        font-weight: 700;
+    }
+
+    .nv-conf-row.low .conf-label {
+        color: #718096;
+        font-weight: 700;
+    }
+
+    .conf-desc {
+        color: #a0aec0;
+    }
+
+    .nv-shortcuts-table,
+    .nv-api-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .nv-shortcuts-table th,
+    .nv-api-table th {
+        padding: 8px 12px;
+        text-align: left;
+        font-size: 11px;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        border-bottom: 1px solid #1e2436;
+    }
+
+    .nv-shortcuts-table td,
+    .nv-api-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #1e2436;
+        color: #a0aec0;
+    }
+
+    .nv-shortcuts-table td:first-child {
+        white-space: nowrap;
+    }
+
+    kbd {
+        background: #0d0f14;
+        border: 1px solid #2a3048;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-family: monospace;
+        color: #4a9eff;
+    }
+
+    .method {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 4px;
+        padding: 2px 7px;
+    }
+
+    .method.post {
+        background: rgba(62, 207, 142, .15);
+        color: #3ecf8e;
+    }
+
+    .method.get {
+        background: rgba(74, 158, 255, .15);
+        color: #4a9eff;
+    }
+
+    .nv-api-table code {
+        background: #0d0f14;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 11px;
+        color: #9b77e8;
+    }
+
+    .nv-help-note {
+        font-size: 12px;
+        color: #4a5568;
+        margin-top: 14px;
+    }
+
+    .nv-arch-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .nv-arch-card {
+        background: #0d0f14;
+        border: 1px solid #1e2436;
+        border-radius: 10px;
+        padding: 16px;
+    }
+
+    .arch-icon {
+        font-size: 24px;
+        margin-bottom: 6px;
+    }
+
+    .arch-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #e2e8f0;
+    }
+
+    .arch-desc {
+        font-size: 11px;
+        color: #718096;
+        margin-top: 4px;
+        line-height: 1.5;
+    }
+</style>

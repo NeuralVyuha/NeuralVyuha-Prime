@@ -1,0 +1,39 @@
+version: '3.8'
+
+# Development Override for docker-compose.slim.yml
+# Usage: docker-compose -f docker-compose.slim.yml -f docker-compose.dev.yml up --build
+
+services:
+  nv-ingest:
+    volumes:
+      - ./nv-core/nv-ingest/app:/app/app
+      - ./nv-core/common:/app/common
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  nv-dedup:
+    volumes:
+      - ./nv-core/nv-dedup/app:/app/app
+      - ./nv-core/common:/app/common
+
+  nv-correlation:
+    volumes:
+      - ./nv-core/nv-correlation/app:/app/app
+      - ./nv-core/common:/app/common
+
+  nv-case-engine:
+    volumes:
+      - ./nv-core/nv-case-engine/app:/app/app
+      - ./nv-core/common:/app/common
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  nv-query:
+    volumes:
+      - ./nv-core/nv-query/app:/app/app
+      - ./nv-core/common:/app/common
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  nv-mcp-server:
+    volumes:
+      - ./nv-core/nv-mcp-server/app:/app/app
+      - ./nv-core/common:/app/common
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8087", "--reload"]

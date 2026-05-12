@@ -1,0 +1,97 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="panel panel-default" style="background: #111827; border: 1px solid rgba(16, 185, 129, 0.3); height: calc(100vh - 200px); display: flex; flex-direction: column;">
+            
+            <!-- AI Chat Header -->
+            <div class="panel-heading" style="background: #1f2937; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="panel-title" style="color: #10b981; font-weight: 600; margin: 0; font-size: 16px;">
+                    <i class="fa fa-brain mr-2"></i> Case AI Chat
+                    <span class="badge badge-primary ml-2" ng-bind="modelProvider" style="font-size: 10px;text-transform: uppercase;"></span>
+                </h3>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-sm" style="background: #10b981; color: white; border: none; font-weight: 600;" 
+                            ng-click="saveToCase()" ng-disabled="isSaving || messages.length <= 1" uib-tooltip="Save Transcript to AI Investigation History">
+                        <i class="fa" ng-class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i> Save Report to Case
+                    </button>
+                    <button class="btn btn-sm btn-link text-muted" ng-click="clearChat()" uib-tooltip="Clear local chat (won't affect saved history)">
+                        <i class="fa fa-eraser"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI Chat Body (Messages) -->
+            <div class="panel-body" id="case-ai-chat-messages" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                
+                <!-- Initial Welcome Message -->
+                <div class="message-wrapper" style="display: flex; gap: 12px; line-height: 1.5;">
+                    <div class="message-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #9ca3af;">
+                        <i class="fa fa-robot text-teal" style="color: #10b981 !important;"></i>
+                    </div>
+                    <div class="nv-msg-bubble" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px 12px 12px 0; color: #d1d5db; padding: 10px 14px; max-width: 85%; font-size: 14px; white-space: pre-wrap; word-break: break-word;">Hello! I am ready to investigate **Case #{{displayId}}**. I can analyze alerts, observables, and tasks within this case to help you build a comprehensive defense strategy. What would you like to know?</div>
+                </div>
+
+                <!-- Dynamic Messages -->
+                <div class="message-wrapper" ng-repeat="msg in messages" ng-class="{'flex-row-reverse': msg.role === 'user'}" style="display: flex; gap: 12px; line-height: 1.5; align-items: flex-start;">
+                    
+                    <div class="message-avatar" style="width: 32px; height: 32px; border-radius: 50%; background: #374151; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #9ca3af;" ng-style="msg.role === 'user' ? {'margin-left': '12px'} : {'margin-right': '12px'}">
+                        <i class="fa fa-user" ng-if="msg.role === 'user'"></i>
+                        <i class="fa fa-robot text-teal" style="color: #10b981 !important;" ng-if="msg.role === 'assistant'"></i>
+                        <i class="fa fa-exclamation-triangle text-danger" ng-if="msg.role === 'system'"></i>
+                    </div>
+                    
+                    <div class="nv-msg-bubble" 
+                         ng-style="msg.role === 'user' ? {'background': 'rgba(16, 185, 129, 0.15)', 'border': '1px solid rgba(16, 185, 129, 0.4)', 'border-radius': '12px 12px 0 12px', 'color': '#e5e7eb'} : {'background': 'rgba(255, 255, 255, 0.05)', 'border': '1px solid rgba(255, 255, 255, 0.1)', 'border-radius': '12px 12px 12px 0', 'color': '#d1d5db'}"
+                         style="padding: 10px 14px; max-width: 85%; font-size: 14px; white-space: pre-wrap; word-break: break-word;">
+                        
+                        <!-- Chain of Thought Elements -->
+                        <div class="nv-thoughts" ng-if="msg.thoughts && msg.thoughts.length > 0" style="margin-bottom: 8px; font-size: 12px; color: #9ca3af; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 5px;">
+                            <div class="nv-thought" ng-repeat="thought in msg.thoughts track by $index">
+                                <i class="fa fa-cog fa-spin" ng-if="$last && msg.isStreaming"></i>
+                                <i class="fa fa-check text-success" style="color: #10b981;" ng-if="!($last && msg.isStreaming)"></i>
+                                {{thought}}
+                            </div>
+                        </div>
+                        
+                        <!-- Message Content -->
+                        <div style="font-family: inherit;">{{msg.content}}</div>
+                    </div>
+                </div>
+
+                <div class="loading-indicator text-teal mt-3" ng-if="loading" style="color: #10b981 !important;">
+                    <i class="fa fa-circle-notch fa-spin"></i> Analyzing case context...
+                </div>
+            </div>
+
+            <!-- AI Chat Footer (Input) -->
+            <div class="panel-footer" style="background: #1f2937; border-top: 1px solid rgba(255,255,255,0.05); padding: 15px 20px;">
+                <form ng-submit="sendMessage()">
+                    <div class="input-group">
+                        <input type="text" class="form-control" style="background:#374151; color:white; border:none;" 
+                               ng-model="inputMessage" placeholder="Ask AI to correlate observables, summarize tasks, or suggest next steps..." 
+                               ng-disabled="loading" autocomplete="off">
+                        <span class="input-group-btn">
+                            <button type="submit" class="btn btn-primary" style="background-color: #10b981; border-color: #10b981;" ng-disabled="loading || !inputMessage.trim()">
+                                <i class="fa fa-paper-plane"></i> Send
+                            </button>
+                        </span>
+                    </div>
+                    
+                    <div class="model-selector mt-2 text-muted small" style="display: flex; align-items: center; margin-top: 8px;">
+                        <span style="margin-right: 8px;">Engine:</span> 
+                        <select ng-model="modelProvider" class="form-control input-sm" style="display:inline-block; width:100px; background:#1f2937; border:1px solid #374151; color:#9ca3af; margin-right:5px; height: 26px; padding: 2px 5px;">
+                            <option value="ollama">Ollama</option>
+                            <option value="moonshot">Moonshot</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="claude">Anthropic</option>
+                            <option value="gemini">Gemini</option>
+                        </select>
+                        <select ng-model="modelName" ng-options="m for m in availableModels[modelProvider]" class="form-control input-sm" style="display:inline-block; width:140px; background:#1f2937; border:1px solid #374151; color:#9ca3af; height: 26px; padding: 2px 5px;">
+                        </select>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
+    </div>
+</div>

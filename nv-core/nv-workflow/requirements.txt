@@ -1,0 +1,11 @@
+kafka-python
+redis
+psycopg2-binary==2.9.9
+pydantic
+python-dotenv
+requests
+cel-python
+pyjwt
+cryptography
+fastapi
+uvicorn

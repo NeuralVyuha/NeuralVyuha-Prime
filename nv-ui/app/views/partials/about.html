@@ -1,0 +1,35 @@
+<div class="modal-body">
+    <div class="vpad20 text-center">
+        <img alt="NeuralVyuha Zenith" height="60" src="images/nv_logo.png" />
+    </div>
+    <div class="row" ng-repeat="(module, ver) in version">
+        <div class="col-md-6"><strong class="pull-right">{{module}}</strong></div>
+        <div class="col-md-6">{{ver}}</div>
+    </div>
+
+    <div class="row mt-xs" ng-repeat="(key, connector) in connectors" ng-if="connector.enabled">
+        <div class="col-md-6"><strong class="pull-right">{{key | uppercase}}</strong></div>
+        <div class="col-md-6">
+            <div ng-repeat="server in connector.servers">
+                <strong>{{server.name}}</strong> - <span>{{server.version || 'Unknown version'}}</span>
+
+                (<strong
+                    ng-class="{'OK': 'text-success', 'ERROR': 'text-danger', 'AUTH_ERROR': 'text-danger'}[server.status]">{{server.status}}</strong>)
+            </div>
+        </div>
+    </div>
+    <div class="row mt-s">
+        <div class="col-md-12 text-center">
+            <strong>
+                NeuralVyuha Zenith
+            </strong>
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <div class="text-center">
+        <div class="btn btn-primary" ng-click="close()">
+            Close
+        </div>
+    </div>
+</div>

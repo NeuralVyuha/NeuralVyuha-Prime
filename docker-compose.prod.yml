@@ -1,0 +1,109 @@
+version: '3.8'
+
+# Production Override for docker-compose.slim.yml
+# Usage: docker-compose -f docker-compose.slim.yml -f docker-compose.prod.yml up -d
+
+services:
+  redpanda:
+    restart: always
+    ports: [] # Remove public port mapping for security
+
+  redis:
+    restart: always
+
+  postgres:
+    restart: always
+    ports: [] # Secure database
+
+  opensearch:
+    restart: always
+
+  minio:
+    restart: always
+
+  nv-ingest:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-ingest:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+
+  nv-dedup:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-dedup:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+
+  nv-correlation:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-correlation:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+
+  nv-indexer:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-indexer:latest
+    restart: always
+
+  nv-group-indexer:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-group-indexer:latest
+    restart: always
+
+  nv-case-engine:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-case-engine:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+    ports: [] # Usually proxied behind an API Gateway in Prod
+
+  nv-workflow:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-workflow:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+
+  nv-query:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-query:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+    ports: []
+
+  nv-ui:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-ui:latest
+    restart: always
+
+  nv-artifact-service:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-artifact-service:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+
+  nv-socket-service:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-socket-service:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+
+  nv-node-service:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-node-service:latest
+    restart: always
+    environment:
+      - DEV_MODE=false
+
+  nv-mcp-server:
+    build: null
+    image: ghcr.io/niteshks22/neuralvyuha-prime/nv-mcp-server:latest
+    restart: always
+    environment:
+      - DEV_MODE=false

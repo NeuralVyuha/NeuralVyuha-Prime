@@ -1,0 +1,166 @@
+<!-- NeuralVyuha Threat Hunter — Enterprise Log Search & Analysis -->
+<div class="nv-hunter-page">
+
+    <!-- ═══ HEADER: Search Bar + Controls ═══ -->
+    <div class="nv-hunter-header">
+        <div class="nv-hunter-title">
+            <i class="fa fa-crosshairs"></i> THREAT HUNTER
+            <span class="nv-hunter-subtitle">OpenSearch Query Engine</span>
+        </div>
+        <div class="nv-hunter-search-row">
+            <div class="nv-hunter-search-wrap">
+                <i class="fa fa-search nv-hunter-search-icon"></i>
+                <input type="text" class="nv-hunter-search-input" ng-model="vm.query"
+                    ng-keydown="$event.keyCode === 13 && vm.executeSearch()"
+                    placeholder='Search logs… e.g. srcip:10.0.0.99 AND rule.level:>8' id="nv-hunter-query-input" />
+                <button class="nv-hunter-search-btn" ng-click="vm.executeSearch()">
+                    <i class="fa fa-bolt"></i> HUNT
+                </button>
+            </div>
+            <div class="nv-hunter-time-controls">
+                <button class="nv-hunter-time-btn" ng-repeat="t in vm.timePresets"
+                    ng-class="{'active': vm.selectedTime === t.value}" ng-click="vm.setTimeRange(t.value)">
+                    {{t.label}}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ STATS BAR ═══ -->
+    <div class="nv-hunter-stats-bar" ng-if="vm.results">
+        <span class="nv-hunter-stat">
+            <i class="fa fa-database"></i>
+            <strong>{{vm.results.total | number}}</strong> events found
+        </span>
+        <span class="nv-hunter-stat">
+            <i class="fa fa-clock-o"></i>
+            {{vm.results.took_ms}} ms
+        </span>
+        <span class="nv-hunter-stat" ng-if="vm.source">
+            <i class="fa fa-filter"></i>
+            source: <strong>{{vm.source}}</strong>
+            <a ng-click="vm.clearSourceFilter()" class="nv-hunter-clear-filter">✕</a>
+        </span>
+        <button class="nv-hunter-export-btn" ng-click="vm.exportCSV()" title="Export as CSV">
+            <i class="fa fa-download"></i> Export
+        </button>
+    </div>
+
+    <!-- ═══ HISTOGRAM ═══ -->
+    <div class="nv-hunter-histogram" ng-if="vm.histogram.buckets.length">
+        <div class="nv-hunter-histogram-bars">
+            <div class="nv-hunter-bar-col" ng-repeat="b in vm.histogram.buckets"
+                ng-style="{'height': vm.barHeight(b.count) + '%'}" title="{{vm.formatTime(b.time)}}: {{b.count}} events"
+                ng-click="vm.drillIntoTime(b.time)">
+            </div>
+        </div>
+        <div class="nv-hunter-histogram-axis">
+            <span>{{vm.formatTime(vm.histogram.buckets[0].time)}}</span>
+            <span>{{vm.formatTime(vm.histogram.buckets[vm.histogram.buckets.length - 1].time)}}</span>
+        </div>
+    </div>
+
+    <!-- ═══ MAIN BODY: Sidebar + Results ═══ -->
+    <div class="nv-hunter-body" ng-if="vm.results">
+
+        <!-- ── Field Breakdown Sidebar ── -->
+        <div class="nv-hunter-sidebar">
+            <h4><i class="fa fa-bar-chart"></i> Field Breakdown</h4>
+            <div class="nv-hunter-field-group" ng-repeat="fg in vm.fieldGroups">
+                <div class="nv-hunter-field-title" ng-click="fg.open = !fg.open">
+                    <i class="fa" ng-class="fg.open ? 'fa-caret-down' : 'fa-caret-right'"></i>
+                    {{fg.label}}
+                </div>
+                <div class="nv-hunter-field-values" ng-if="fg.open">
+                    <div class="nv-hunter-field-val" ng-repeat="v in fg.values"
+                        ng-click="vm.addFilter(fg.field, v.key)">
+                        <span class="nv-hunter-fv-key">{{v.key}}</span>
+                        <span class="nv-hunter-fv-count">{{v.count}}</span>
+                    </div>
+                    <div class="nv-hunter-field-val" ng-if="!fg.values.length">
+                        <span class="nv-hunter-fv-empty">No data</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Results Table ── -->
+        <div class="nv-hunter-results">
+            <table class="nv-hunter-table">
+                <thead>
+                    <tr>
+                        <th class="nv-hunter-th-time" ng-click="vm.toggleSort('timestamp')">
+                            Time <i class="fa" ng-class="vm.sortIcon('timestamp')"></i>
+                        </th>
+                        <th>Source</th>
+                        <th>Severity</th>
+                        <th>Event Summary</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="hit in vm.results.hits" class="nv-hunter-row" ng-click="vm.selectEvent(hit)"
+                        ng-class="{'nv-hunter-row-selected': vm.selectedEvent === hit}">
+                        <td class="nv-hunter-td-time">{{vm.formatTime(hit.timestamp)}}</td>
+                        <td>
+                            <span class="nv-hunter-source-badge"
+                                ng-class="'nv-src-' + (hit.payload.source || hit.source || 'unknown')">
+                                {{hit.payload.source || hit.source || '—'}}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nv-sev-dot nv-sev-{{hit.payload.severity || hit.severity || 0}}"></span>
+                            {{vm.severityLabel(hit.payload.severity || hit.severity)}}
+                        </td>
+                        <td class="nv-hunter-td-summary">
+                            {{hit.payload.rule_description || hit.payload.original_payload.rule.description ||
+                            hit.fingerprint || '—'}}
+                        </td>
+                    </tr>
+                    <tr ng-if="!vm.results.hits.length">
+                        <td colspan="4" class="nv-hunter-empty">
+                            <i class="fa fa-search"></i> No events match your query.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <div class="nv-hunter-pagination" ng-if="vm.results.total > vm.pageSize">
+                <button class="nv-hunter-page-btn" ng-disabled="vm.currentPage <= 1"
+                    ng-click="vm.changePage(vm.currentPage - 1)">
+                    <i class="fa fa-chevron-left"></i>
+                </button>
+                <span class="nv-hunter-page-info">
+                    Page {{vm.currentPage}} of {{vm.totalPages}}
+                </span>
+                <button class="nv-hunter-page-btn" ng-disabled="vm.currentPage >= vm.totalPages"
+                    ng-click="vm.changePage(vm.currentPage + 1)">
+                    <i class="fa fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ LOADING ═══ -->
+    <div class="nv-hunter-loading" ng-if="vm.loading">
+        <i class="fa fa-spinner fa-spin fa-3x"></i>
+        <p>Searching {{vm.results ? vm.results.total : ''}} documents…</p>
+    </div>
+
+    <!-- ═══ EVENT DETAIL DRAWER ═══ -->
+    <div class="nv-hunter-drawer" ng-class="{'open': vm.selectedEvent}">
+        <div class="nv-hunter-drawer-header" ng-if="vm.selectedEvent">
+            <h4>
+                <i class="fa fa-file-code-o"></i> Event Detail
+                <span class="nv-hunter-drawer-id">{{vm.selectedEvent._id}}</span>
+            </h4>
+            <button class="nv-hunter-drawer-close" ng-click="vm.selectedEvent = null">
+                <i class="fa fa-times"></i>
+            </button>
+        </div>
+        <div class="nv-hunter-drawer-body" ng-if="vm.selectedEvent">
+            <pre class="nv-hunter-json">{{vm.selectedEvent | json:2}}</pre>
+        </div>
+    </div>
+
+</div>

@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+websockets
+redis
+kafka-python
+pyjwt
+cryptography
+requests

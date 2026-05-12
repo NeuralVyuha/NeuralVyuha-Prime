@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pydantic
+kafka-python
+pyjwt
+cryptography
+requests
+httpx
+prometheus-client
+psycopg2-binary
+redis
+psutil
+minio
+cel-python
+chevron

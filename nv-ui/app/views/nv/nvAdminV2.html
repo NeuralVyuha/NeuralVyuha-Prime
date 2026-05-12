@@ -1,0 +1,628 @@
+<!--
+  nvAdmin.html — NeuralVyuha Admin Panel
+  Tabs: Platform | Users | System Health
+  Controller: NvAdminCtrl (controllerAs: vm)
+-->
+<div class="nv-admin-page">
+
+    <!-- Page Header -->
+    <div class="nv-admin-header">
+        <div class="nv-admin-header-icon">⚙</div>
+        <div class="nv-admin-header-text">
+            <h1>Administration</h1>
+            <p>Platform settings, user management, and system health</p>
+        </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="nv-admin-tabs">
+        <button class="nv-admin-tab" ng-class="{active: vm.activeTab === 'platform'}" ng-click="vm.setTab('platform')">
+            <span class="tab-icon">🖥</span> Platform
+        </button>
+        <button class="nv-admin-tab" ng-class="{active: vm.activeTab === 'users'}" ng-click="vm.setTab('users')">
+            <span class="tab-icon">👥</span> Users
+        </button>
+        <button class="nv-admin-tab" ng-class="{active: vm.activeTab === 'health'}" ng-click="vm.setTab('health')">
+            <span class="tab-icon">💓</span> System Health
+        </button>
+        <button class="nv-admin-tab" ng-class="{active: vm.activeTab === 'ai'}" ng-click="vm.setTab('ai')">
+            <span class="tab-icon">🪄</span> AI Configuration
+        </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="nv-admin-loading" ng-if="vm.loading">
+        <div class="nv-spinner"></div>
+        <span>Loading…</span>
+    </div>
+
+    <!-- ── PLATFORM TAB ────────────────────────────────────────────── -->
+    <div class="nv-admin-content" ng-if="!vm.loading && vm.activeTab === 'platform'">
+        <div class="nv-admin-grid">
+
+            <div class="nv-admin-card">
+                <div class="nv-admin-card-head">
+                    <span class="nv-admin-card-icon">🛡</span>
+                    <h3>Platform Identity</h3>
+                </div>
+                <table class="nv-admin-table">
+                    <tr>
+                        <td class="label">Product</td>
+                        <td>NeuralVyuha Prime</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Version</td>
+                        <td>{{vm.platform.version || 'N/A'}}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Build</td>
+                        <td>NV-ZENITH</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Architecture</td>
+                        <td>Event-Driven CQRS Microservices</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Auth</td>
+                        <td>JWT / HS256 — 1 hour expiry</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="nv-admin-card">
+                <div class="nv-admin-card-head">
+                    <span class="nv-admin-card-icon">🔌</span>
+                    <h3>Connectors</h3>
+                </div>
+                <table class="nv-admin-table">
+                    <tr>
+                        <td class="label">Cortex</td>
+                        <td>
+                            <span class="nv-badge"
+                                ng-class="vm.platform.connectors.cortex.enabled ? 'badge-green' : 'badge-muted'">
+                                {{vm.platform.connectors.cortex.enabled ? vm.platform.connectors.cortex.status :
+                                'Disabled'}}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="label">MISP</td>
+                        <td>
+                            <span class="nv-badge"
+                                ng-class="vm.platform.connectors.misp.enabled ? 'badge-green' : 'badge-muted'">
+                                {{vm.platform.connectors.misp.enabled ? vm.platform.connectors.misp.status :
+                                'Disabled'}}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="nv-admin-card">
+                <div class="nv-admin-card-head">
+                    <span class="nv-admin-card-icon">⚡</span>
+                    <h3>Engine Configuration</h3>
+                </div>
+                <table class="nv-admin-table">
+                    <tr>
+                        <td class="label">Event Spine</td>
+                        <td>Redpanda (Kafka)</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Query Engine</td>
+                        <td>OpenSearch 2.x</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Vault</td>
+                        <td>PostgreSQL 14</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Evidence Store</td>
+                        <td>MinIO + AES-256</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Real-time</td>
+                        <td>WebSocket + Redis Pub/Sub</td>
+                    </tr>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── USERS TAB ──────────────────────────────────────────────── -->
+    <div class="nv-admin-content" ng-if="!vm.loading && vm.activeTab === 'users'">
+        <div class="nv-admin-card">
+            <div class="nv-admin-card-head">
+                <span class="nv-admin-card-icon">👥</span>
+                <h3>Active Users</h3>
+                <span class="nv-badge badge-blue" style="margin-left:auto">{{vm.users.length}} user(s)</span>
+            </div>
+            <table class="nv-admin-table nv-admin-users-table">
+                <thead>
+                    <tr>
+                        <th>Login</th>
+                        <th>Name</th>
+                        <th>Organisation</th>
+                        <th>Roles</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="u in vm.users">
+                        <td><span class="nv-user-avatar">{{u.name[0] | uppercase}}</span> {{u.login}}</td>
+                        <td>{{u.name}}</td>
+                        <td>{{u.organisation}}</td>
+                        <td><span class="nv-badge badge-purple">{{u.roles}}</span></td>
+                        <td><span class="nv-badge badge-green">{{u.status}}</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p class="nv-admin-note">Full user management API available in the enterprise edition.</p>
+        </div>
+    </div>
+
+    <!-- ── HEALTH TAB ─────────────────────────────────────────────── -->
+    <div class="nv-admin-content" ng-if="!vm.loading && vm.activeTab === 'health'">
+        
+        <!-- Engine Telemetry (Relocated from Dashboard) -->
+        <div class="nv-telemetry-row animate__animated animate__fadeIn" style="margin-bottom: 24px;">
+            <div class="nv-tel-card nv-glow-cyan">
+                <div class="nv-tel-icon"><i class="fa fa-bolt"></i></div>
+                <div class="nv-tel-data">
+                    <span class="nv-tel-val">{{vm.engineMetrics.events_per_sec | number:0}}</span>
+                    <span class="nv-tel-label">Events / Sec</span>
+                </div>
+            </div>
+            <div class="nv-tel-card">
+                <div class="nv-tel-icon"><i class="fa fa-microchip"></i></div>
+                <div class="nv-tel-data">
+                    <span class="nv-tel-val">{{vm.engineMetrics.cpu_usage}}%</span>
+                    <span class="nv-tel-label">CPU Load</span>
+                </div>
+            </div>
+            <div class="nv-tel-card">
+                <div class="nv-tel-icon"><i class="fa fa-clock-o"></i></div>
+                <div class="nv-tel-data">
+                    <span class="nv-tel-val">{{vm.formatUptime(vm.engineMetrics.active_threads)}}</span>
+                    <span class="nv-tel-label">Engine Uptime</span>
+                </div>
+            </div>
+            <div class="nv-tel-card" ng-class="{'nv-glow-danger': vm.stats.totalAlerts > 100}">
+                <div class="nv-tel-icon"><i class="fa fa-warning"></i></div>
+                <div class="nv-tel-data">
+                    <span class="nv-tel-val"
+                        ng-class="{'text-danger': vm.stats.totalAlerts > 100}">{{vm.stats.totalAlerts}}</span>
+                    <span class="nv-tel-label">Total Alerts</span>
+                </div>
+            </div>
+            <div class="nv-tel-card" ng-class="{'nv-glow-cyan': vm.isAllHealthy()}">
+                <div class="nv-tel-icon"><i class="fa fa-heartbeat"></i></div>
+                <div class="nv-tel-data">
+                    <span class="nv-tel-val"
+                        ng-class="{'text-success': vm.isAllHealthy(), 'text-danger': !vm.isAllHealthy()}">{{vm.isAllHealthy()
+                        ? 'STABLE' : 'DEGRADED'}}</span>
+                    <span class="nv-tel-label">Engine Status</span>
+                </div>
+            </div>
+            <div class="nv-tel-card">
+                <div class="nv-tel-icon text-success"><i class="fa fa-shield"></i></div>
+                <div class="nv-tel-data">
+                    <span class="nv-tel-val">ACTIVE</span>
+                    <span class="nv-tel-label">Security Mesh</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="nv-health-grid">
+            <div class="nv-health-card" ng-repeat="svc in vm.health.services" ng-class="vm.statusClass(svc.status)">
+                <div class="nv-health-dot" ng-class="vm.statusClass(svc.status)"></div>
+                <div class="nv-health-info">
+                    <div class="nv-health-name">{{svc.name}}</div>
+                    <div class="nv-health-detail">{{svc.detail}}</div>
+                </div>
+                <div class="nv-health-status">{{svc.status}}</div>
+            </div>
+        </div>
+        <p class="nv-admin-note" ng-if="vm.health.error">⚠ {{vm.health.error}}</p>
+    </div>
+
+    <!-- ── AI TAB ────────────────────────────────────────────────── -->
+    <div class="nv-admin-content" ng-if="!vm.loading && vm.activeTab === 'ai'">
+        <div class="nv-admin-grid">
+            <div class="nv-admin-card" style="grid-column: span 2;">
+                <div class="nv-admin-card-head">
+                    <span class="nv-admin-card-icon">🧠</span>
+                    <h3>AI Threat Copilot Configuration</h3>
+                    <a href="#!/nv/integrations" class="nv-badge badge-blue" style="margin-left:auto; text-decoration:none">Go to Integration Hub ↗</a>
+                </div>
+                
+                <p style="font-size: 13px; color: #718096; margin-bottom: 20px;">
+                    Configure the brains behind your Threat Copilot. These API keys are stored encrypted in the platform vault and used to power autonomous investigations.
+                </p>
+
+                <div class="nv-ai-status-grid">
+                    <div class="nv-ai-engine-row" ng-repeat="eng in ['gemini', 'openai', 'anthropic']">
+                        <div class="nv-ai-engine-info">
+                            <span class="nv-ai-engine-name" style="text-transform: capitalize;">{{eng}}</span>
+                            <span class="nv-badge" ng-class="vm.aiStatus[eng] === 'UP' ? 'badge-green' : 'badge-muted'">
+                                {{vm.aiStatus[eng] || 'Not Configured'}}
+                            </span>
+                        </div>
+                        <div class="nv-ai-engine-actions">
+                             <input type="password" class="nv-admin-input" placeholder="Enter API Key..." 
+                                    ng-model="vm.aiKeys[eng]" style="width: 250px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+                             <button class="btn btn-primary btn-sm" ng-click="vm.saveAiKey(eng)" ng-disabled="vm.savingAi">Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="nv-admin-note">
+                    <i class="fa fa-info-circle"></i> After saving, the AI Copilot will automatically synchronize with the new credentials.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .nv-admin-page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 24px;
+        font-family: 'Inter', 'Roboto', system-ui, sans-serif;
+    }
+
+    .nv-admin-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .nv-admin-header-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4a9eff, #9b77e8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+    }
+
+    .nv-admin-header-text h1 {
+        font-size: 22px;
+        font-weight: 700;
+        color: #e2e8f0;
+    }
+
+    .nv-admin-header-text p {
+        font-size: 13px;
+        color: #718096;
+        margin-top: 2px;
+    }
+
+    .nv-admin-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid #1e2436;
+        padding-bottom: 0;
+    }
+
+    .nv-admin-tab {
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        color: #718096;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 10px 18px;
+        cursor: pointer;
+        transition: color .15s, border-color .15s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .nv-admin-tab.active {
+        color: #e2e8f0;
+        border-bottom-color: #4a9eff;
+    }
+
+    .nv-admin-tab:hover {
+        color: #e2e8f0;
+    }
+
+    .nv-admin-loading {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #718096;
+        padding: 32px 0;
+    }
+
+    .nv-spinner {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #1e2436;
+        border-top-color: #4a9eff;
+        border-radius: 50%;
+        animation: nv-spin .7s linear infinite;
+    }
+
+    @keyframes nv-spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .nv-admin-content {
+        animation: nv-fadein .2s ease;
+    }
+
+    @keyframes nv-fadein {
+        from {
+            opacity: 0;
+            transform: translateY(8px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    .nv-admin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 16px;
+    }
+
+    .nv-admin-card {
+        background: #131720;
+        border: 1px solid #1e2436;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .nv-admin-card-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .nv-admin-card-icon {
+        font-size: 18px;
+    }
+
+    .nv-admin-card-head h3 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #e2e8f0;
+    }
+
+    .nv-admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .nv-admin-table td,
+    .nv-admin-table th {
+        padding: 8px 4px;
+        border-bottom: 1px solid #1e2436;
+        color: #e2e8f0;
+    }
+
+    .nv-admin-table th {
+        font-size: 11px;
+        color: #718096;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        font-weight: 600;
+    }
+
+    .nv-admin-table td.label {
+        color: #718096;
+        width: 40%;
+    }
+
+    .nv-admin-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .nv-admin-users-table {
+        margin-top: 8px;
+    }
+
+    .nv-user-avatar {
+        display: inline-flex;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4a9eff, #9b77e8);
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fff;
+        margin-right: 6px;
+    }
+
+    .nv-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 20px;
+    }
+
+    .badge-green {
+        background: rgba(62, 207, 142, .15);
+        color: #3ecf8e;
+    }
+
+    .badge-blue {
+        background: rgba(74, 158, 255, .15);
+        color: #4a9eff;
+    }
+
+    .badge-purple {
+        background: rgba(155, 119, 232, .15);
+        color: #9b77e8;
+    }
+
+    .badge-red {
+        background: rgba(224, 92, 106, .15);
+        color: #e05c6a;
+    }
+
+    .badge-muted {
+        background: rgba(113, 128, 150, .15);
+        color: #718096;
+    }
+
+    .nv-admin-note {
+        font-size: 12px;
+        color: #4a5568;
+        margin-top: 14px;
+    }
+
+    /* Health Grid */
+    .nv-health-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+    }
+
+    .nv-health-card {
+        background: #131720;
+        border: 1px solid #1e2436;
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .nv-health-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .status-up .nv-health-dot {
+        background: #3ecf8e;
+        box-shadow: 0 0 8px rgba(62, 207, 142, .5);
+        animation: nv-pulse 2s infinite;
+    }
+
+    .status-down .nv-health-dot {
+        background: #e05c6a;
+    }
+
+    .status-degraded .nv-health-dot {
+        background: #f5c842;
+    }
+
+    .status-unknown .nv-health-dot {
+        background: #4a5568;
+    }
+
+    @keyframes nv-pulse {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(62, 207, 142, .5)
+        }
+
+        50% {
+            box-shadow: 0 0 0 6px rgba(62, 207, 142, 0)
+        }
+    }
+
+    .nv-health-info {
+        flex: 1;
+    }
+
+    .nv-health-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #e2e8f0;
+    }
+
+    .nv-health-detail {
+        font-size: 11px;
+        color: #718096;
+        margin-top: 2px;
+    }
+
+    .nv-health-status {
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .status-up .nv-health-status {
+        color: #3ecf8e;
+    }
+
+    .status-down .nv-health-status {
+        color: #e05c6a;
+    }
+
+    .status-degraded .nv-health-status {
+        color: #f5c842;
+    }
+
+    .status-unknown .nv-health-status {
+        color: #4a5568;
+    }
+
+    /* AI Config Styling */
+    .nv-ai-status-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 10px;
+    }
+
+    .nv-ai-engine-row {
+        background: rgba(255,255,255,0.02);
+        border: 1px solid #1e2436;
+        border-radius: 8px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .nv-ai-engine-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .nv-ai-engine-name {
+        font-weight: 600;
+        color: #e2e8f0;
+        font-size: 14px;
+        min-width: 80px;
+    }
+
+    .nv-ai-engine-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .nv-admin-input:focus {
+        border-color: #4a9eff !important;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(74,158,255,0.2);
+    }
+</style>

@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+psycopg2-binary
+boto3
+cryptography
+pyjwt
+python-multipart
+requests
+prometheus-client

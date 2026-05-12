@@ -1,0 +1,36 @@
+name: PR Test
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r nv-core/nv-ingest/requirements.txt
+          pip install -r nv-core/nv-dedup/requirements.txt
+          pip install -r nv-core/nv-correlation/requirements.txt
+          pip install -r nv-core/nv-query/requirements.txt
+          pip install -r nv-core/nv-case-engine/requirements.txt
+          pip install pytest httpx pyyaml pyjwt cryptography fastapi requests
+
+      - name: Run Unit Tests
+        run: |
+          pytest nv-core/nv-ingest/tests/
+          pytest nv-core/nv-dedup/tests/
+          pytest nv-core/nv-correlation/tests/
+          pytest nv-core/common/auth/tests/
+
+      - name: Verify Stack Build
+        run: |
+          docker-compose -f docker-compose.slim.yml build nv-ingest nv-query nv-case-engine

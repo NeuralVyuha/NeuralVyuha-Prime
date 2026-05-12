@@ -1,0 +1,304 @@
+<!-- NeuralVyuha Enterprise Dashboard -->
+<div class="nv-dashboard" role="main" aria-label="NeuralVyuha Dashboard">
+
+    <!-- Welcome Banner -->
+    <div class="nv-welcome-banner animate__animated animate__fadeIn">
+        <div class="nv-welcome-main">
+            <h1 class="nv-welcome-title">Command Center <span class="text-accent-blue">Dashboard</span></h1>
+            <p class="nv-welcome-subtitle">Real-time threat intelligence and engine telemetry.</p>
+        </div>
+        <div class="nv-welcome-meta">
+            <!-- Global Search -->
+            <div class="nv-search-box" style="margin-right: 12px;">
+                <i class="fa fa-search"></i>
+                <input type="text" class="nv-search-input" placeholder="Search incidents..." ng-model="vm.searchQuery"
+                    ng-keypress="$event.keyCode === 13 && vm.onSearch()">
+                <button class="btn btn-xs nv-refresh-btn" ng-if="vm.searchQuery" ng-click="vm.clearSearch()"
+                    style="position: absolute; right: 4px; top: 3px; border: none; background: transparent; color: var(--nv-text-muted);">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="nv-meta-item">
+                <i class="fa fa-terminal"></i>
+                <span>v{{vm.systemVersion}}</span>
+            </div>
+            <div class="nv-meta-item">
+                <div class="nv-live-dot"
+                    ng-class="vm.socketStatus === 'connected' ? 'nv-dot-online' : 'nv-dot-offline'"></div>
+                <span>Stream: {{vm.socketStatus | uppercase}}</span>
+            </div>
+            <div class="nv-meta-item">
+                <i class="fa fa-clock-o"></i>
+                <span am-time-ago="vm.lastUpdated"></span>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <!-- --- Stats Row --- -->
+    <div class="row nv-stats-row">
+        <div class="col-lg-3 col-md-6">
+            <div class="nv-stat-card nv-stat-incidents animate__animated animate__zoomIn">
+                <div class="nv-stat-icon"><i class="fa fa-folder-open"></i></div>
+                <div class="nv-stat-content">
+                    <div class="nv-stat-value">{{vm.stats.totalIncidents}}</div>
+                    <div class="nv-stat-label">Total Incidents</div>
+                </div>
+                <div class="nv-stat-trend" ng-if="vm.stats.trends.totalIncidents.direction !== 'neutral'">
+                    <i class="fa"
+                        ng-class="vm.stats.trends.totalIncidents.direction === 'up' ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+                    {{vm.stats.trends.totalIncidents.value}}%
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="nv-stat-card nv-stat-open animate__animated animate__zoomIn" style="animation-delay: 0.1s">
+                <div class="nv-stat-icon"><i class="fa fa-exclamation-circle"></i></div>
+                <div class="nv-stat-content">
+                    <div class="nv-stat-value">{{vm.stats.openIncidents}}</div>
+                    <div class="nv-stat-label">Open Incidents</div>
+                </div>
+                <div class="nv-stat-trend" ng-if="vm.stats.trends.openIncidents.direction !== 'neutral'">
+                    <i class="fa"
+                        ng-class="vm.stats.trends.openIncidents.direction === 'up' ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+                    {{vm.stats.trends.openIncidents.value}}%
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="nv-stat-card nv-stat-alerts animate__animated animate__zoomIn" style="animation-delay: 0.2s">
+                <div class="nv-stat-icon"><i class="fa fa-bell"></i></div>
+                <div class="nv-stat-content">
+                    <div class="nv-stat-value">{{vm.stats.totalAlerts}}</div>
+                    <div class="nv-stat-label">Unresolved Alerts</div>
+                </div>
+                <div class="nv-stat-trend" ng-if="vm.stats.trends.totalAlerts.direction !== 'neutral'">
+                    <i class="fa"
+                        ng-class="vm.stats.trends.totalAlerts.direction === 'up' ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+                    {{vm.stats.trends.totalAlerts.value}}%
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="nv-stat-card nv-stat-cases animate__animated animate__zoomIn" style="animation-delay: 0.3s">
+                <div class="nv-stat-icon"><i class="fa fa-briefcase"></i></div>
+                <div class="nv-stat-content">
+                    <div class="nv-stat-value">{{vm.stats.totalCases}}</div>
+                    <div class="nv-stat-label">Active Cases</div>
+                </div>
+                <div class="nv-stat-trend" ng-if="vm.stats.trends.totalCases.direction !== 'neutral'">
+                    <i class="fa"
+                        ng-class="vm.stats.trends.totalCases.direction === 'up' ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+                    {{vm.stats.trends.totalCases.value}}%
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- Visual Analytics Row --- -->
+    <div class="row nv-main-row">
+        <!-- Center Column: Incident Groups -->
+        <div class="col-md-8">
+            <div class="nv-panel nv-panel-glass animate__animated animate__fadeInLeft">
+                <div class="nv-panel-header">
+                    <h3 class="nv-panel-title"><i class="fa fa-area-chart"></i> Threat Velocity (Last 14 Days)</h3>
+                    <div class="nv-panel-actions">
+                        <button class="nv-refresh-btn btn btn-xs" ng-click="vm.loadChartData()"><i
+                                class="fa fa-refresh"></i></button>
+                    </div>
+                </div>
+                <div class="nv-panel-body" style="padding: 20px;">
+                    <c3 chart="vm.timelineChart" height="280"></c3>
+                </div>
+            </div>
+
+            <div class="nv-panel nv-panel-glass mt-4 animate__animated animate__fadeInUp">
+                <div class="nv-panel-header nv-alert-filter-header">
+                    <h3 class="nv-panel-title"><i class="fa fa-list"></i> Incident Groups</h3>
+                    <div class="nv-filter-tray">
+                        <!-- Status Filter -->
+                        <div class="nv-filter-group btn-group">
+                            <button class="nv-filter-btn btn" ng-class="{'nv-filter-active': vm.filter === 'ALL'}"
+                                ng-click="vm.setFilter('ALL')">All</button>
+                            <button class="nv-filter-btn btn" ng-class="{'nv-filter-active': vm.filter === 'OPEN'}"
+                                ng-click="vm.setFilter('OPEN')">Open</button>
+                            <button class="nv-filter-btn btn" ng-class="{'nv-filter-active': vm.filter === 'CLOSED'}"
+                                ng-click="vm.setFilter('CLOSED')">Closed</button>
+                        </div>
+                        <!-- Severity Filter Pills -->
+                        <div class="nv-filter-group btn-group">
+                            <button class="nv-filter-btn btn"
+                                ng-class="{'nv-filter-active': vm.severityFilter === 'CRITICAL'}"
+                                ng-click="vm.setSeverityFilter('CRITICAL')">
+                                <i class="fa fa-circle" style="color: #f5576c; font-size: 8px;"></i> Critical
+                            </button>
+                            <button class="nv-filter-btn btn"
+                                ng-class="{'nv-filter-active': vm.severityFilter === 'HIGH'}"
+                                ng-click="vm.setSeverityFilter('HIGH')">
+                                <i class="fa fa-circle" style="color: #f093fb; font-size: 8px;"></i> High
+                            </button>
+                            <button class="nv-filter-btn btn"
+                                ng-class="{'nv-filter-active': vm.severityFilter === 'MEDIUM'}"
+                                ng-click="vm.setSeverityFilter('MEDIUM')">
+                                <i class="fa fa-circle" style="color: #fbcd35; font-size: 8px;"></i> Med
+                            </button>
+                            <button class="nv-filter-btn btn"
+                                ng-class="{'nv-filter-active': vm.severityFilter === 'LOW'}"
+                                ng-click="vm.setSeverityFilter('LOW')">
+                                <i class="fa fa-circle" style="color: #4facfe; font-size: 8px;"></i> Low
+                            </button>
+                        </div>
+                        <!-- Date Range Toggle -->
+                        <button class="nv-filter-btn btn" ng-class="{'nv-filter-active': vm.showDateFilter}"
+                            ng-click="vm.toggleDateFilter()">
+                            <i class="fa fa-calendar"></i> Date
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Date Range Picker (Collapsible) -->
+                <div class="nv-panel-body" ng-if="vm.showDateFilter"
+                    style="padding: 12px 20px; border-bottom: 1px solid var(--nv-border-subtle); background: rgba(255,255,255,0.02);">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <label style="color: var(--nv-text-muted); font-size: 12px; margin: 0;">From:</label>
+                        <input type="date" class="nv-input" ng-model="vm.dateRange.from" style="max-width: 160px;">
+                        <label style="color: var(--nv-text-muted); font-size: 12px; margin: 0;">To:</label>
+                        <input type="date" class="nv-input" ng-model="vm.dateRange.to" style="max-width: 160px;">
+                        <button class="nv-btn-primary" ng-click="vm.applyDateFilter()"><i class="fa fa-check"></i>
+                            Apply</button>
+                        <button class="nv-filter-btn btn" ng-click="vm.clearDateFilter()" ng-if="vm.params.dateFrom"><i
+                                <i class="fa fa-times"></i> Clear</button>
+                    </div>
+                </div>
+
+                <div class="nv-panel-body">
+                    <!-- Loading Skeleton -->
+                    <div ng-if="vm.isLoading" class="nv-skeleton-container">
+                        <div class="nv-skeleton-row" ng-repeat="i in [1,2,3,4]">
+                            <div class="nv-skeleton nv-skeleton-badge"></div>
+                            <div class="nv-skeleton nv-skeleton-text"></div>
+                            <div class="nv-skeleton nv-skeleton-label"></div>
+                            <div class="nv-skeleton nv-skeleton-status"></div>
+                        </div>
+                    </div>
+
+                    <div ng-if="!vm.isLoading && vm.groups.length > 0">
+                        <table class="table nv-table">
+                            <thead>
+                                <tr>
+                                    <th width="80">ID</th>
+                                    <th>Subject</th>
+                                    <th width="100">Severity</th>
+                                    <th width="120">Created At</th>
+                                    <th width="100">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="group in vm.groups" class="nv-table-row" ng-click="vm.viewDetail(group)">
+                                    <td><span class="nv-id-badge">#{{group._id | limitTo:6}}</span></td>
+                                    <td>
+                                        <div class="text-bold">{{group.title}}</div>
+                                        <div class="text-xs text-muted">{{group.alert_count}} aggregated events</div>
+                                    </td>
+                                    <td><span class="nv-severity"
+                                            ng-class="'nv-sev-' + (group.severity || 'low' | lowercase)">{{group.severity
+                                            || 'LOW'}}</span></td>
+                                    <td><span class="nv-timestamp" am-time-ago="group.createdAt"></span></td>
+                                    <td><span class="nv-status-label"
+                                            ng-class="'nv-status-' + (group.status | lowercase)">{{group.status}}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div ng-if="!vm.isLoading && vm.groups.length === 0" class="nv-empty-state">
+                        <div class="nv-empty-content">
+                            <img src="images/nv_logo.png" style="height:64px; margin-bottom:16px; opacity:0.5; filter: grayscale(0.5);">
+                            <div class="nv-empty-text">No active threats detected. System secure.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NEW ROW: Health and Links (moved from right column) -->
+            <div class="row">
+                <div class="col-md-7">
+                    <!-- Health Panel (Enhanced) -->
+                    <div class="nv-panel nv-panel-glass mt-4 animate__animated animate__fadeInUp"
+                        style="animation-delay: 0.1s">
+                        <div class="nv-panel-header">
+                            <h3 class="nv-panel-title"><i class="fa fa-server"></i> Platform Health</h3>
+                            <span class="nv-health-overall"
+                                ng-class="vm.isAllHealthy() ? 'nv-health-good' : 'nv-health-bad'">
+                                {{vm.isAllHealthy() ? 'All Systems Operational' : 'Issue Detected'}}
+                            </span>
+                        </div>
+                        <div class="nv-panel-body">
+                            <div class="nv-health-item" ng-repeat="check in vm.healthChecks">
+                                <div class="nv-health-left">
+                                    <span class="nv-health-dot" ng-class="'nv-dot-' + check.status"></span>
+                                    <div>
+                                        <span class="nv-health-label">{{check.label}}</span>
+                                        <div style="font-size: 10px; color: var(--nv-text-muted); margin-top: 2px;">
+                                            {{check.detail}}
+                                            <span ng-if="check.latency > 0"
+                                                style="margin-left: 6px; color: var(--nv-accent-blue); font-family: monospace;">{{check.latency}}ms</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <!-- Latency bar -->
+                                    <div ng-if="check.latency > 0"
+                                        style="width: 50px; height: 4px; background: var(--nv-bg-tertiary); border-radius: 2px;">
+                                        <div style="height: 100%; border-radius: 2px; transition: width 0.5s ease;"
+                                            ng-style="{'width': (check.latency < 200 ? '30%' : (check.latency < 500 ? '60%' : '100%')), 'background': (check.latency < 200 ? '#43e97b' : (check.latency < 500 ? '#fbcd35' : '#f5576c'))}">
+                                        </div>
+                                    </div>
+                                    <span class="label nv-health-badge"
+                                        ng-class="{'label-success': check.status === 'online', 'label-danger': check.status === 'offline', 'label-default': check.status === 'checking'}">
+                                        {{check.status | uppercase}}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <!-- Quick Links -->
+                    <div class="nv-panel nv-panel-glass mt-4 animate__animated animate__fadeInUp"
+                        style="animation-delay: 0.2s">
+                        <div class="nv-panel-header">
+                            <h3 class="nv-panel-title"><i class="fa fa-compass"></i> Quick Links</h3>
+                        </div>
+                        <div class="nv-panel-body nv-quick-nav">
+                            <a class="nv-nav-btn" ui-sref="nv.alerts"><i class="fa fa-bell"></i> Manage Alerts <i
+                                    class="fa fa-chevron-right nv-nav-arrow"></i></a>
+                            <a class="nv-nav-btn" ui-sref="nv.ingest-control"><i class="fa fa-cogs"></i> Ingestion Hub
+                                <i class="fa fa-chevron-right nv-nav-arrow"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Column -->
+        <div class="col-md-4">
+            <!-- Deep Live HUD -->
+            <dashboard-live-stream options="{limit: 50}" autoload="true" mode="'view'"></dashboard-live-stream>
+
+            <!-- Severity Mix -->
+            <div class="nv-panel nv-panel-glass mt-4 animate__animated animate__fadeInRight"
+                style="animation-delay: 0.1s">
+                <div class="nv-panel-header">
+                    <h3 class="nv-panel-title"><i class="fa fa-pie-chart"></i> Severity Mix</h3>
+                </div>
+                <div class="nv-panel-body" style="padding: 20px;">
+                    <c3 chart="vm.severityChart" height="240"></c3>
+                </div>
+            </div>
+        </div> <!-- /col-md-4 -->
+    </div> <!-- /row -->
+
+</div> <!-- /nv-dashboard -->

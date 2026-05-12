@@ -1,0 +1,1124 @@
+<!--
+  integrations.html — Full-Scale Integration Hub
+  NeuralVyuha Prime | Controller: NvIntegrationsCtrl (controllerAs: vm)
+  Works with localStorage — no backend required.
+-->
+<div class="nv-integrations-wrapper">
+    <style>
+        :root {
+            --bg: #0d0f14;
+            --bg-card: #131720;
+            --bg-modal: #161922;
+            --bg-input: #0d0f14;
+            --border: #1e2436;
+            --border-focus: #4a9eff;
+            --accent-blue: #4a9eff;
+            --accent-green: #3ecf8e;
+            --accent-red: #e05c6a;
+            --accent-yellow: #f5c842;
+            --accent-purple: #9b77e8;
+            --text: #e2e8f0;
+            --text-muted: #718096;
+            --text-dim: #4a5568;
+            --radius: 10px;
+            --radius-sm: 6px;
+            --ease: cubic-bezier(.4, 0, .2, 1);
+            --shadow: 0 4px 24px rgba(0, 0, 0, .45);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        .hub-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        /* ── Header ── */
+        .hub-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .hub-header-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4a9eff 0%, #9b77e8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .hub-header-text h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .hub-header-text p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .hub-header-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* ── Stats Bar ── */
+        .hub-stats {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .hub-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hub-stat .num {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: monospace;
+        }
+
+        .hub-stat .lbl {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hub-stat.up .num {
+            color: var(--accent-green);
+        }
+
+        .hub-stat.down .num {
+            color: var(--accent-red);
+        }
+
+        .hub-stat.degraded .num {
+            color: var(--accent-yellow);
+        }
+
+        .hub-stat.total .num {
+            color: var(--accent-blue);
+        }
+
+        /* ── Filter Bar ── */
+        .filter-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--accent-blue);
+            color: var(--text);
+        }
+
+        .filter-chip.active {
+            background: rgba(74, 158, 255, .12);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+        }
+
+        .filter-search {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 5px 12px;
+            color: var(--text);
+            font-size: 12px;
+            width: 180px;
+            outline: none;
+            margin-left: auto;
+        }
+
+        .filter-search:focus {
+            border-color: var(--border-focus);
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 14px;
+            height: 34px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: background .15s, transform .1s;
+        }
+
+        .btn:active {
+            transform: scale(.97);
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #3a8ee8;
+        }
+
+        .btn-ghost {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-ghost:hover {
+            border-color: #3a4060;
+            background: #1a1f2e;
+        }
+
+        .btn-danger {
+            background: rgba(224, 92, 106, .15);
+            border: 1px solid rgba(224, 92, 106, .3);
+            color: var(--accent-red);
+        }
+
+        .btn-danger:hover {
+            background: rgba(224, 92, 106, .25);
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .btn-sm {
+            height: 28px;
+            padding: 0 10px;
+            font-size: 11px;
+        }
+
+        /* ── Backend Badge ── */
+        .backend-badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .backend-badge.online {
+            background: rgba(62, 207, 142, .12);
+            color: var(--accent-green);
+        }
+
+        .backend-badge.offline {
+            background: rgba(224, 92, 106, .12);
+            color: var(--accent-red);
+        }
+
+        .backend-badge.checking {
+            background: rgba(74, 158, 255, .1);
+            color: var(--accent-blue);
+        }
+
+        /* ── Section ── */
+        .section-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 24px 0 12px;
+        }
+
+        .section-head h2 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .count-badge {
+            background: var(--border);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
+        }
+
+        .section-sep {
+            margin: 24px 0;
+            border: none;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── Node Cards Grid ── */
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 14px;
+        }
+
+        .node-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .node-card:hover {
+            border-color: #2a3048;
+            box-shadow: var(--shadow);
+        }
+
+        .node-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: var(--radius) 0 0 var(--radius);
+            transition: background .4s;
+        }
+
+        .node-card.status-UP::before {
+            background: var(--accent-green);
+        }
+
+        .node-card.status-DEGRADED::before {
+            background: var(--accent-yellow);
+        }
+
+        .node-card.status-DOWN::before {
+            background: var(--accent-red);
+        }
+
+        .node-card.status-UNKNOWN::before {
+            background: var(--text-dim);
+        }
+
+        .node-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .node-type-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .node-card-title {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .node-card-title h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .node-card-title .node-url {
+            font-size: 10px;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-dot.UP {
+            background: var(--accent-green);
+            animation: glow-g 2s infinite;
+        }
+
+        .status-dot.DEGRADED {
+            background: var(--accent-yellow);
+        }
+
+        .status-dot.DOWN {
+            background: var(--accent-red);
+        }
+
+        .status-dot.UNKNOWN {
+            background: var(--text-dim);
+        }
+
+        @keyframes glow-g {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(62, 207, 142, .6)
+            }
+
+            50% {
+                box-shadow: 0 0 0 4px rgba(62, 207, 142, 0)
+            }
+        }
+
+        .status-UP {
+            color: var(--accent-green);
+        }
+
+        .status-DEGRADED {
+            color: var(--accent-yellow);
+        }
+
+        .status-DOWN {
+            color: var(--accent-red);
+        }
+
+        .status-UNKNOWN {
+            color: var(--text-muted);
+        }
+
+        /* ── Node Metrics ── */
+        .node-metrics {
+            display: flex;
+            gap: 12px;
+            margin: 10px 0;
+            padding: 10px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .metric-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -.02em;
+        }
+
+        .metric-label {
+            font-size: 9px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-top: 2px;
+        }
+
+        .metric-value.good {
+            color: var(--accent-green);
+        }
+
+        .metric-value.warn {
+            color: var(--accent-yellow);
+        }
+
+        .metric-value.bad {
+            color: var(--accent-red);
+        }
+
+        .metric-value.muted {
+            color: var(--text-muted);
+        }
+
+        /* ── Card Footer ── */
+        .node-card-footer {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .node-card-footer .spacer {
+            flex: 1;
+        }
+
+        .api-key-badge {
+            font-size: 10px;
+            font-family: 'Courier New', monospace;
+            color: var(--text-dim);
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+
+        .error-hint {
+            font-size: 10px;
+            color: var(--accent-red);
+            margin-top: 6px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .source-badge {
+            font-size: 9px;
+            padding: 1px 5px;
+            border-radius: 3px;
+            background: rgba(74, 158, 255, .1);
+            color: var(--accent-blue);
+            text-transform: uppercase;
+        }
+
+        /* ── Empty State ── */
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            background: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+        }
+
+        .empty-state .glyph {
+            font-size: 36px;
+            opacity: .25;
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        /* ── Catalog ── */
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .catalog-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            gap: 14px;
+            transition: border-color .2s, box-shadow .2s;
+            cursor: pointer;
+        }
+
+        .catalog-card:hover {
+            border-color: var(--accent-blue);
+            box-shadow: var(--shadow);
+        }
+
+        .cat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .cat-content {
+            flex: 1;
+        }
+
+        .cat-content h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .cat-content p {
+            font-size: 10px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .cat-tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .cat-tag {
+            font-size: 9px;
+            padding: 1px 5px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-dim);
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .cat-tag.no-key {
+            background: rgba(62, 207, 142, .1);
+            color: #3ecf8e;
+            font-family: inherit;
+            border-radius: 10px;
+            padding: 1px 6px;
+        }
+
+        .cat-registered {
+            font-size: 9px;
+            padding: 1px 6px;
+            background: rgba(74, 158, 255, .12);
+            color: var(--accent-blue);
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .cat-actions {
+            margin-top: 8px;
+        }
+
+        /* ── Modal (nv- prefix avoids Bootstrap collision) ── */
+        .nv-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1050;
+            background: rgba(0, 0, 0, .65);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nv-modal {
+            background: var(--bg-modal, #161922);
+            border: 1px solid var(--border, #1e2436);
+            border-radius: 14px;
+            padding: 24px;
+            width: 440px;
+            max-width: calc(100vw - 32px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: block !important;
+            position: relative;
+            z-index: 1060;
+            opacity: 1 !important;
+            transform: none !important;
+        }
+
+        .nv-modal h2 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text, #fff);
+        }
+
+        .nv-modal .close-btn {
+            float: right;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+        }
+
+        .nv-modal .close-btn:hover {
+            color: var(--text);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            letter-spacing: .03em;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-size: 12px;
+            padding: 0 10px;
+            transition: border-color .15s;
+        }
+
+        .form-group textarea {
+            height: 60px;
+            padding: 8px 10px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--border-focus);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-dim);
+        }
+
+        .form-group select option {
+            background: #161922;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .toggle-row span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .tgl {
+            position: relative;
+            width: 36px;
+            height: 20px;
+        }
+
+        .tgl input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .tgl-slider {
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: var(--border);
+            cursor: pointer;
+            transition: background .2s;
+        }
+
+        .tgl-slider::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            left: 3px;
+            top: 3px;
+            transition: transform .2s;
+        }
+
+        .tgl input:checked+.tgl-slider {
+            background: var(--accent-blue);
+        }
+
+        .tgl input:checked+.tgl-slider::before {
+            transform: translateX(16px);
+        }
+
+        .test-result {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .test-result.ok {
+            background: rgba(62, 207, 142, .12);
+            border: 1px solid rgba(62, 207, 142, .25);
+            color: var(--accent-green);
+        }
+
+        .test-result.fail {
+            background: rgba(224, 92, 106, .12);
+            border: 1px solid rgba(224, 92, 106, .25);
+            color: var(--accent-red);
+        }
+
+        .test-result.testing {
+            background: rgba(74, 158, 255, .1);
+            border: 1px solid rgba(74, 158, 255, .2);
+            color: var(--accent-blue);
+        }
+
+        .nv-modal-footer {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: flex-end;
+        }
+
+        /* ── Toasts ── */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: var(--bg-modal);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            min-width: 240px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideInR .2s;
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        @keyframes slideInR {
+            from {
+                transform: translateX(60px);
+                opacity: 0
+            }
+
+            to {
+                transform: none;
+                opacity: 1
+            }
+        }
+
+        .toast.success {
+            border-left: 3px solid var(--accent-green);
+        }
+
+        .toast.error {
+            border-left: 3px solid var(--accent-red);
+        }
+
+        .toast.info {
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        /* ── Loading ── */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, #1a1f2e 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.4s infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0
+            }
+
+            100% {
+                background-position: -200% 0
+            }
+        }
+    </style>
+
+    <div>
+
+        <!-- Toasts -->
+        <div class="toast-container">
+            <div class="toast {{t.type}}" ng-repeat="t in vm.toasts">{{t.message}}</div>
+        </div>
+
+        <!-- Add/Edit Modal -->
+        <div class="nv-modal-overlay" ng-if="vm.showModal" ng-click="vm.closeModal()">
+            <div class="nv-modal" ng-click="$event.stopPropagation()">
+                <button class="close-btn" ng-click="vm.closeModal()">✕</button>
+                <h2>{{vm.editingNode ? 'Edit' : 'Register'}} Integration Node</h2>
+
+                <div class="form-group">
+                    <label>Node Type</label>
+                    <select ng-model="vm.form.node_type" ng-disabled="!!vm.editingNode">
+                        <option ng-repeat="c in vm.catalog" value="{{c.id}}">{{c.icon}} {{c.name}}</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Display Name</label>
+                    <input type="text" ng-model="vm.form.name" placeholder="e.g. Production Cortex" />
+                </div>
+                <div class="form-group">
+                    <label>Base URL</label>
+                    <input type="url" ng-model="vm.form.url" placeholder="https://service.example.com" />
+                </div>
+                <div class="form-group">
+                    <label>API Key {{vm.editingNode ? '(blank = keep current)' : ''}}</label>
+                    <input type="password" ng-model="vm.form.api_key"
+                        placeholder="{{vm.editingNode ? '••••••••' : 'Enter API key (optional)'}}"
+                        autocomplete="new-password" />
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" ng-model="vm.form.description" placeholder="Optional notes about this node" />
+                </div>
+                <div class="toggle-row">
+                    <span>Verify TLS / SSL</span>
+                    <label class="tgl"><input type="checkbox" ng-model="vm.form.tls_verify" /><span
+                            class="tgl-slider"></span></label>
+                </div>
+
+                <div class="test-result testing" ng-if="vm.testInProgress">⟳ Probing endpoint…</div>
+                <div class="test-result ok" ng-if="vm.testResult && vm.testResult.ok">✓ Connected —
+                    {{vm.testResult.latency_ms}}ms <span ng-if="vm.testResult.note" style="opacity:.6">
+                        ({{vm.testResult.note}})</span></div>
+                <div class="test-result fail" ng-if="vm.testResult && !vm.testResult.ok">✗ {{vm.testResult.error}}</div>
+
+                <div class="nv-modal-footer">
+                    <button class="btn btn-ghost" ng-click="vm.closeModal()">Cancel</button>
+                    <button class="btn btn-ghost" ng-click="vm.testConnection()"
+                        ng-disabled="vm.testInProgress || !vm.form.url">⚡ Test</button>
+                    <button class="btn btn-primary" ng-click="vm.saveNode()"
+                        ng-disabled="vm.saving || !vm.form.node_type || !vm.form.name || !vm.form.url">
+                        {{vm.saving ? 'Saving…' : (vm.editingNode ? 'Update' : 'Save & Register')}}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page -->
+        <div class="hub-page">
+
+            <!-- Header -->
+            <div class="hub-header">
+                <div class="hub-header-icon">⬡</div>
+                <div class="hub-header-text">
+                    <h1>Integration Hub</h1>
+                    <p>Connect analyzers, threat intel, SIEM, and notification tools. All data stored locally when
+                        backend is offline.</p>
+                </div>
+                <div class="hub-header-actions">
+                    <span class="backend-badge {{vm.backendStatus}}">
+                        {{vm.backendStatus === 'online' ? '● Backend' : (vm.backendStatus === 'offline' ? '○
+                        LocalStorage' : '◌ Checking…')}}
+                    </span>
+                    <button class="btn btn-primary" ng-click="vm.openAddModal()">+ Add Node</button>
+                    <button class="btn btn-ghost" ng-click="vm.toggleCatalog()">{{vm.showCatalog ? '✕ Close' : '📦
+                        Catalog'}}</button>
+                    <button class="btn btn-ghost" ng-click="vm.testAllNodes()" ng-disabled="!vm.nodes.length">⚡ Test
+                        All</button>
+                    <button class="btn btn-ghost" ng-click="vm.exportConfig()" ng-disabled="!vm.nodes.length">↓
+                        Export</button>
+                    <button class="btn btn-ghost" ng-click="vm.importConfig()">↑ Import</button>
+                    <button class="btn btn-ghost" ng-click="vm.loadNodes()">↺</button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="hub-stats">
+                <div class="hub-stat total"><span class="num">{{vm.nodes.length}}</span><span class="lbl">Total</span>
+                </div>
+                <div class="hub-stat up"><span class="num">{{vm.getUpCount()}}</span><span class="lbl">UP</span></div>
+                <div class="hub-stat down"><span class="num">{{vm.getDownCount()}}</span><span class="lbl">DOWN</span>
+                </div>
+                <div class="hub-stat degraded"><span class="num">{{vm.getDegradedCount()}}</span><span
+                        class="lbl">Degraded</span></div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <span class="filter-chip" ng-repeat="cat in vm.categories"
+                    ng-class="{'active': vm.filterCategory === cat.id}"
+                    ng-click="vm.filterCategory = cat.id">{{cat.label}}</span>
+                <input type="text" class="filter-search" placeholder="Search nodes..." ng-model="vm.searchQuery" />
+            </div>
+
+            <!-- ══ Catalog Panel ══ -->
+            <div ng-if="vm.showCatalog">
+                <div class="section-head">
+                    <div
+                        style="width:24px;height:24px;background:rgba(74,158,255,.15);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;">
+                        📦</div>
+                    <h2>Integration Catalog</h2>
+                    <span class="count-badge">{{vm.catalog.length}}</span>
+                </div>
+                <div class="catalog-grid">
+                    <div class="catalog-card" ng-repeat="cat in vm.getFilteredCatalog()"
+                        ng-click="vm.openAddModal(cat)">
+                        <div class="cat-icon" ng-style="{'background': cat.color + '18'}">{{cat.icon}}</div>
+                        <div class="cat-content">
+                            <h3>{{cat.name}} <span class="cat-registered"
+                                    ng-if="vm.getRegisteredCount(cat.id)">{{vm.getRegisteredCount(cat.id)}}
+                                    active</span></h3>
+                            <p>{{cat.desc}}</p>
+                            <div class="cat-tags">
+                                <span class="cat-tag" ng-repeat="tag in cat.tags">{{tag}}</span>
+                                <span class="cat-tag no-key" ng-if="!cat.requiresKey">No API key</span>
+                            </div>
+                            <div class="cat-actions">
+                                <button class="btn btn-ghost btn-sm">+ Register</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr class="section-sep">
+            </div>
+
+            <!-- ══ Loading ══ -->
+            <div class="nodes-grid" ng-if="vm.loading">
+                <div class="node-card" ng-repeat="i in [1,2,3]">
+                    <div class="skeleton" style="height:14px;width:60%;margin-bottom:10px"></div>
+                    <div class="skeleton" style="height:10px;width:90%;margin-bottom:6px"></div>
+                    <div class="skeleton" style="height:36px;margin-top:12px"></div>
+                </div>
+            </div>
+
+            <!-- ══ Dynamic Node Sections — grouped by type ══ -->
+            <div ng-if="!vm.loading">
+                <div ng-repeat="type in vm.getActiveTypes()" ng-init="typeNodes = vm.getNodesByType(type)">
+                    <div class="section-head">
+                        <div style="width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;"
+                            ng-style="{'background': vm.getNodeColor(typeNodes[0]) + '20'}">
+                            {{vm.getNodeIcon(typeNodes[0])}}
+                        </div>
+                        <h2>{{vm.getNodeTypeName(typeNodes[0])}} Nodes</h2>
+                        <span class="count-badge">{{typeNodes.length}}</span>
+                    </div>
+
+                    <div class="nodes-grid">
+                        <div class="node-card status-{{node.status}}" ng-repeat="node in typeNodes">
+                            <div class="node-card-header">
+                                <div class="node-type-icon" ng-style="{'background': vm.getNodeColor(node) + '20'}">
+                                    {{vm.getNodeIcon(node)}}
+                                </div>
+                                <div class="node-card-title">
+                                    <h3>{{node.name}}</h3>
+                                    <div class="node-url">{{node.url}}</div>
+                                </div>
+                                <div class="status-indicator">
+                                    <span class="status-dot {{node.status}}"></span>
+                                    <span class="status-{{node.status}}">{{node.status}}</span>
+                                </div>
+                            </div>
+
+                            <div class="node-metrics">
+                                <div class="metric-item">
+                                    <div class="metric-value"
+                                        ng-class="{'good': node.latency_ms < 500, 'warn': node.latency_ms >= 500 && node.latency_ms < 2000, 'bad': node.latency_ms >= 2000, 'muted': !node.latency_ms}">
+                                        {{node.latency_ms ? (node.latency_ms + 'ms') : '—'}}
+                                    </div>
+                                    <div class="metric-label">Latency</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value muted">{{node.probe_count || 0}}</div>
+                                    <div class="metric-label">Probes</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-value muted" style="font-size:10px">{{node._source || 'local'}}
+                                    </div>
+                                    <div class="metric-label">Source</div>
+                                </div>
+                            </div>
+
+                            <div ng-if="node.api_key_masked"><span class="api-key-badge">{{node.api_key_masked}}</span>
+                            </div>
+                            <div class="error-hint" ng-if="node.last_error">⚠ {{node.last_error}}</div>
+                            <div style="font-size:9px;color:#4a5568;margin-top:4px;" ng-if="node.last_checked">
+                                Checked: {{node.last_checked | date:'HH:mm:ss'}}
+                            </div>
+
+                            <div class="node-card-footer">
+                                <span class="spacer"></span>
+                                <button class="btn btn-ghost btn-sm" ng-click="vm.quickTest(node)"
+                                    ng-disabled="node._testing">
+                                    {{node._testing ? '…' : '⚡ Test'}}
+                                </button>
+                                <button class="btn btn-ghost btn-sm" ng-click="vm.openEditModal(node)">✎</button>
+                                <button class="btn btn-danger btn-sm" ng-click="vm.deleteNode(node)">✕</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" ng-if="!vm.loading && !vm.nodes.length">
+                <div class="glyph">⬡</div>
+                <p>No integration nodes registered.<br>
+                    Click <strong>+ Add Node</strong> or browse the <strong>📦 Catalog</strong> to connect your first
+                    tool.</p>
+            </div>
+
+            <!-- Empty State (filtered) -->
+            <div class="empty-state" ng-if="!vm.loading && vm.nodes.length && !vm.getFilteredNodes().length">
+                <div class="glyph">🔍</div>
+                <p>No nodes match your filter.</p>
+            </div>
+
+        </div>
+    </div>
+</div>

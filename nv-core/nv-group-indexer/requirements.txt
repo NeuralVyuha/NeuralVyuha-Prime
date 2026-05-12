@@ -1,0 +1,6 @@
+kafka-python
+opensearch-py
+prometheus-client
+requests
+cryptography
+pyjwt

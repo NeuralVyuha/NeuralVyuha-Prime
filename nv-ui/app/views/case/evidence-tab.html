@@ -1,0 +1,70 @@
+<!-- NeuralVyuha Prime — Evidence Tab Template -->
+<div class="nv-evidence-tab" ng-controller="EvidenceTabCtrl">
+
+    <!-- Upload Zone -->
+    <div class="nv-drop-zone" ng-class="{'nv-drop-zone--active': dragOver, 'nv-drop-zone--uploading': uploading}"
+        ng-on-dragover="onDragOver($event)" ng-on-dragleave="onDragLeave()" ng-on-drop="onDrop($event)"
+        ng-click="fileInput.click()">
+
+        <input type="file" style="display:none" ng-ref="fileInput" on-change="onFileSelect($event)" />
+
+        <span ng-if="!uploading">
+            <i class="fa fa-upload fa-2x"></i>
+            <p>Drag &amp; drop a file here, or <strong>click to select</strong></p>
+        </span>
+
+        <!-- Progress Bar -->
+        <div ng-if="uploading" class="nv-upload-progress">
+            <div class="nv-upload-progress__bar" ng-style="{'width': uploadProgress + '%'}"></div>
+            <span class="nv-upload-progress__label">Encrypting &amp; uploading… {{uploadProgress}}%</span>
+        </div>
+    </div>
+
+    <!-- Artifacts Table -->
+    <div class="nv-evidence-list" ng-if="!loading && artifacts.length > 0">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>SHA-256</th>
+                    <th>Size</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="a in artifacts">
+                    <td>
+                        <i class="fa fa-file-o"></i> {{a.filename}}
+                    </td>
+                    <td><code title="{{a.sha256}}">{{a.sha256 | limitTo:16}}…</code></td>
+                    <td>{{a.size | filesize}}</td>
+                    <td>
+                        <!-- SIGHTING BADGE -->
+                        <span ng-if="a.is_sighting" class="label label-danger nv-sighting-badge"
+                            title="Seen in {{a.sightings_count}} cases">
+                            <i class="fa fa-exclamation-triangle"></i> SIGHTING ×{{a.sightings_count}}
+                        </span>
+                        <span ng-if="!a.is_sighting" class="label label-default">
+                            Clean
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-xs btn-primary" ng-click="downloadArtifact(a)">
+                            <i class="fa fa-download"></i> Download
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-muted text-center" ng-if="!loading && artifacts.length === 0">
+        <i class="fa fa-folder-open-o fa-2x"></i>
+        <p>No evidence files uploaded yet.</p>
+    </div>
+
+    <div ng-if="loading" class="text-center">
+        <i class="fa fa-spinner fa-spin fa-2x"></i>
+    </div>
+</div>

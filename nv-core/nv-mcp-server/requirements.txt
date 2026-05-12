@@ -1,0 +1,15 @@
+fastapi>=0.104.1
+uvicorn>=0.23.2
+pydantic>=2.4.2
+mcp>=1.2.0
+openai>=1.10.0
+anthropic>=0.18.0
+psycopg2-binary>=2.9.9
+httpx>=0.25.2
+cryptography
+pyjwt
+requests
+google-generativeai
+litellm
+langgraph
+

@@ -1,0 +1,54 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title">Incident Details: {{\::$vm.groupId}}</h3>
+                <a ui-sref="app.nv-incidents" class="btn btn-default btn-xs pull-right">Back to List</a>
+            </div>
+            <div class="box-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="dl-horizontal">
+                            <dt>Primary Rule</dt>
+                            <dd>{{$vm.group.primary_rule_name || $vm.group._rule_metadata.name}}</dd>
+                            <dt>Confidence</dt>
+                            <dd>{{$vm.group._rule_metadata.confidence}}</dd>
+                            <dt>Status</dt>
+                            <dd>{{$vm.group.status}}</dd>
+                        </dl>
+                    </div>
+                     <div class="col-md-6">
+                        <dl class="dl-horizontal">
+                            <dt>First Seen</dt>
+                            <dd>{{$vm.group.first_seen | date:'medium'}}</dd>
+                            <dt>Last Seen</dt>
+                            <dd>{{$vm.group.last_seen | date:'medium'}}</dd>
+                            <dt>Alert Count</dt>
+                            <dd>{{$vm.group.alert_count}}</dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h4>Alert Timeline</h4>
+                <ul class="timeline">
+                    <li ng-repeat="alert in $vm.alerts">
+                        <i class="fa fa-bell bg-blue"></i>
+                        <div class="timeline-item">
+                            <span class="time"><i class="fa fa-clock-o"></i> {{alert._link_info.linked_at | date:'shortTime'}}</span>
+                            <h3 class="timeline-header"><a href="#">{{alert.type}}</a> {{alert.title}}</h3>
+                            <div class="timeline-body">
+                                <p>{{alert.description}}</p>
+                                <small class="text-muted">Link Reason: {{alert._link_info.reason}}</small>
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <i class="fa fa-clock-o bg-gray"></i>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic
+psycopg2-binary
+cryptography
+pyjwt
+redis
+aiohttp
+prometheus-client
+requests

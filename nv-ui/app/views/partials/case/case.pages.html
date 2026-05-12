@@ -1,0 +1,110 @@
+<div class="case-pages p-m">
+    <!-- Main Header -->
+    <div class="flex-row items-center justify-between m-b-lg p-b-sm" style="border-bottom: 1px solid #eee;">
+        <div>
+            <h2 class="m-0 font-bold text-dark"><i class="fa fa-book text-primary m-r-sm"></i>Case Wiki & Documentation
+            </h2>
+            <p class="text-muted m-t-xs m-b-0">Central knowledge repository for investigation findings and procedures.
+            </p>
+        </div>
+        <div>
+            <button class="btn btn-primary" ng-click="startAdd()" ng-if="!isEditing">
+                <i class="fa fa-plus m-r-xs"></i> Create New Page
+            </button>
+            <button class="btn btn-default" ng-click="cancelEdit()" ng-if="isEditing">
+                <i class="fa fa-times m-r-xs"></i> Cancel Operation
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit/Create Form View -->
+    <div class="row" ng-if="isEditing">
+        <div class="col-md-12">
+            <div class="panel panel-default border-left-primary shadow-sm">
+                <div class="panel-heading bg-white font-bold">
+                    <span ng-if="!currentEditingPage.id">Create New Documentation Page</span>
+                    <span ng-if="currentEditingPage.id">Editing: {{currentEditingPage.title}}</span>
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label class="control-label text-uppercase small text-muted font-bold">Page Title</label>
+                        <input type="text" class="form-control input-lg"
+                            ng-model="(currentEditingPage || newPage).title"
+                            placeholder="e.g., Initial Evidence Review">
+                    </div>
+                    <div class="form-group m-t-md">
+                        <label class="control-label text-uppercase small text-muted font-bold">Documentation Content
+                            (Markdown)</label>
+                        <textarea class="form-control font-monospace" rows="15"
+                            ng-model="(currentEditingPage || newPage).content"
+                            placeholder="# Use Markdown to structure your documentation..."></textarea>
+                    </div>
+                </div>
+                <div class="panel-footer bg-white text-right">
+                    <button class="btn btn-link m-r-sm" ng-click="cancelEdit()">Discard Changes</button>
+                    <button class="btn btn-success p-h-md" ng-click="savePage()"
+                        ng-disabled="!(currentEditingPage || newPage).title || !(currentEditingPage || newPage).content">
+                        <i class="fa fa-check m-r-xs"></i>
+                        <span ng-if="!currentEditingPage.id">Publish Documentation</span>
+                        <span ng-if="currentEditingPage.id">Save Updates</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content View -->
+    <div ng-if="!isEditing">
+        <!-- Loader -->
+        <div class="text-center p-xl" ng-if="isLoading">
+            <i class="fa fa-circle-o-notch fa-spin fa-3x text-primary opacity-50"></i>
+            <p class="m-t-md text-muted">Retrieving case documentation...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div class="alert bg-white text-center p-xl b-a border-dashed" ng-if="!isLoading && pages.length === 0"
+            style="border-color: #ddd;">
+            <div class="m-b-md">
+                <i class="fa fa-file-text-o fa-4x text-muted opacity-25"></i>
+            </div>
+            <h3 class="font-bold text-muted">No documentation pages yet</h3>
+            <p class="text-muted m-b-lg">Every great investigation starts with clear documentation. Create your first
+                page to get started.</p>
+            <button class="btn btn-primary" ng-click="startAdd()">
+                <i class="fa fa-plus"></i> Add First Page
+            </button>
+        </div>
+
+        <!-- Pages Explorer -->
+        <div class="row" ng-if="!isLoading && pages.length > 0">
+            <div class="col-md-12">
+                <div class="m-b-lg" ng-repeat="page in pages">
+                    <div class="panel panel-default shadow-xs mb-0">
+                        <div class="panel-heading bg-light d-flex align-items-center justify-content-between p-v-sm">
+                            <h3 class="panel-title font-bold h4">
+                                <i class="fa fa-file-text-o m-r-sm text-info"></i> {{page.title}}
+                            </h3>
+                            <div class="panel-actions pull-right">
+                                <span class="text-muted small m-r-md">
+                                    <i class="fa fa-user m-r-xs"></i> {{page.createdBy}}
+                                    <span class="m-h-xs">|</span>
+                                    <i class="fa fa-clock-o m-r-xs"></i> {{page.createdAt | date:'medium'}}
+                                </span>
+                                <button class="btn btn-xs btn-default" ng-click="startEdit(page)" title="Edit Page">
+                                    <i class="fa fa-pencil"></i>
+                                </button>
+                                <button class="btn btn-xs btn-danger" ng-click="deletePage(page.id)"
+                                    title="Delete Page">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="panel-body p-h-xl p-v-lg">
+                            <div marked="page.content" class="markdown-body"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

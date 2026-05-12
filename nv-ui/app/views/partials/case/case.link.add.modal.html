@@ -1,0 +1,47 @@
+<div class="modal-header bg-primary">
+    <h3 class="modal-title">Link to another case</h3>
+</div>
+<div class="modal-body">
+    <div class="form-group">
+        <label>Search Case (Title or ID)</label>
+        <div class="input-group">
+            <input type="text" class="form-control" ng-model="searchQuery" placeholder="Enter keywords..."
+                ng-enter="search()">
+            <span class="input-group-btn">
+                <button class="btn btn-primary" type="button" ng-click="search()" ng-disabled="searching">
+                    <i class="fa fa-search"></i>
+                </button>
+            </span>
+        </div>
+    </div>
+
+    <div class="vpad10" ng-if="results.length > 0">
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr>
+                    <th>Case #</th>
+                    <th>Title</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="c in results" ng-if="c.case_id !== currentCaseId">
+                    <td>#{{c.case_id.split('-')[0]}}</td>
+                    <td>{{c.title}}</td>
+                    <td>
+                        <button class="btn btn-xs btn-success" ng-click="link(c.case_id)" ng-disabled="linking">
+                            <i class="fa fa-link"></i> Link
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="empty-message" ng-if="searched && results.length === 0">
+        No cases found matching "{{searchQuery}}"
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-default" ng-click="cancel()">Close</button>
+</div>

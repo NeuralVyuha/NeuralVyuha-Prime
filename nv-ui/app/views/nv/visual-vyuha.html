@@ -1,0 +1,344 @@
+<!-- Visual Vyuha — Case-Level Knowledge Graph -->
+<style>
+    .vv-container {
+        position: relative;
+        height: calc(100vh - 50px);
+        background: #0a0e1a;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    /* ── Toolbar ── */
+    .vv-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, rgba(10,14,26,0.95), rgba(17,24,39,0.95));
+        border-bottom: 1px solid #2a2f45;
+        flex-shrink: 0;
+    }
+    .vv-toolbar .title {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #06b6d4, #a855f7);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        letter-spacing: 1px;
+    }
+    .vv-toolbar .case-title { font-size: 12px; color: #94a3b8; margin-top: 2px; max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .vv-controls { display: flex; align-items: center; gap: 6px; }
+    .vv-search {
+        background: #1a1f35;
+        border: 1px solid #2a2f45;
+        border-radius: 6px;
+        padding: 5px 10px;
+        color: #e2e8f0;
+        font-size: 11px;
+        width: 160px;
+        outline: none;
+    }
+    .vv-search:focus { border-color: #06b6d4; box-shadow: 0 0 0 2px rgba(6,182,212,0.2); }
+    .vv-btn {
+        background: #1a1f35;
+        border: 1px solid #2a2f45;
+        border-radius: 5px;
+        padding: 5px 10px;
+        color: #94a3b8;
+        font-size: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .vv-btn:hover { border-color: #06b6d4; color: #06b6d4; }
+    .vv-btn.active { border-color: #06b6d4; color: #06b6d4; background: rgba(6,182,212,0.1); }
+    .vv-btn-add { background: rgba(6,182,212,0.1); border-color: #06b6d4; color: #06b6d4; }
+
+    /* ── Graph Area ── */
+    .vv-body { display: flex; flex: 1; overflow: hidden; position: relative; }
+    #cy-container { flex: 1; background: #0a0e1a; }
+
+    /* ── Loading / Error ── */
+    .vv-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        color: #94a3b8;
+    }
+    .vv-loading .spinner {
+        width: 40px; height: 40px; border: 3px solid #2a2f45; border-top: 3px solid #06b6d4;
+        border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .vv-error { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: #ef4444; font-size: 14px; }
+
+    /* ── Sidebar Panel ── */
+    .vv-sidebar {
+        width: 340px;
+        background: rgba(17,24,39,0.98);
+        border-left: 1px solid #2a2f45;
+        padding: 16px;
+        overflow-y: auto;
+        flex-shrink: 0;
+    }
+    .vv-sidebar.empty { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #64748b; }
+    .vv-sidebar.empty i { font-size: 40px; color: #2a2f45; margin-bottom: 12px; }
+    .vv-sidebar.empty h4 { color: #94a3b8; margin: 0 0 4px; }
+    .vv-sidebar.empty p { font-size: 12px; }
+    .sb-title { font-size: 15px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; word-break: break-all; }
+    .sb-tag {
+        display: inline-block; padding: 2px 8px; border-radius: 4px;
+        font-size: 9px; font-weight: 600; text-transform: uppercase; margin-bottom: 12px;
+    }
+    .sb-section { margin-bottom: 14px; }
+    .sb-section h5 {
+        font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b;
+        margin: 0 0 6px; padding-bottom: 4px; border-bottom: 1px solid #2a2f45;
+    }
+    .sb-section p { font-size: 11px; color: #94a3b8; line-height: 1.4; margin: 0; word-break: break-all; }
+    .sb-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+    .sb-row .lbl { color: #94a3b8; }
+    .sb-row .val { font-family: monospace; color: #e2e8f0; font-size: 10px; }
+    .sb-conn-list { list-style: none; padding: 0; margin: 0; }
+    .sb-conn-list li {
+        padding: 4px 6px; margin-bottom: 2px; background: rgba(255,255,255,0.03);
+        border-radius: 4px; font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 4px;
+    }
+    .sb-conn-list li .arrow { font-family: monospace; color: #64748b; }
+    .sb-conn-list li .conn-label { margin-left: auto; font-size: 9px; color: #64748b; }
+    .sb-tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
+    .sb-tag-item { padding: 2px 6px; border-radius: 3px; background: rgba(139,92,246,0.15); color: #a78bfa; font-size: 9px; }
+
+    /* ── Legend ── */
+    .vv-legend {
+        position: absolute; bottom: 12px; left: 12px;
+        background: rgba(17,24,39,0.9); border: 1px solid #2a2f45; border-radius: 6px;
+        padding: 10px 12px; z-index: 998;
+    }
+    .vv-legend h5 { font-size: 8px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; margin: 0 0 6px; }
+    .vv-legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #94a3b8; margin-bottom: 2px; }
+    .vv-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Stats ── */
+    .vv-stats {
+        position: absolute; bottom: 12px; right: 352px;
+        display: flex; gap: 6px; z-index: 998;
+    }
+    .vv-stat { background: rgba(17,24,39,0.9); border: 1px solid #2a2f45; border-radius: 5px; padding: 4px 10px; font-size: 10px; color: #94a3b8; }
+    .vv-stat .num { font-family: monospace; font-weight: 700; color: #06b6d4; }
+
+    /* ── Modal ── */
+    .vv-modal-overlay {
+        position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.6); z-index: 1100;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .vv-modal {
+        background: #1a1f35; border: 1px solid #2a2f45; border-radius: 10px;
+        padding: 20px; width: 360px;
+    }
+    .vv-modal h4 { color: #e2e8f0; font-size: 14px; margin: 0 0 12px; }
+    .vv-modal label { display: block; font-size: 10px; color: #94a3b8; margin: 6px 0 3px; text-transform: uppercase; letter-spacing: 1px; }
+    .vv-modal input, .vv-modal select {
+        width: 100%; background: #0a0e1a; border: 1px solid #2a2f45; border-radius: 5px;
+        padding: 6px 10px; color: #e2e8f0; font-size: 12px; outline: none; box-sizing: border-box;
+    }
+    .vv-modal input:focus, .vv-modal select:focus { border-color: #06b6d4; }
+    .vv-modal-actions { display: flex; gap: 6px; margin-top: 12px; justify-content: flex-end; }
+    .vv-modal .vv-checkbox { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .vv-modal .vv-checkbox label { margin: 0; font-size: 11px; }
+</style>
+
+<div class="vv-container">
+    <!-- Toolbar -->
+    <div class="vv-toolbar">
+        <div>
+            <div class="title">CASE GRAPH</div>
+            <div class="case-title" ng-if="vm.caseData">{{vm.caseData.title || vm.caseId}}</div>
+        </div>
+        <div class="vv-controls">
+            <input type="text" class="vv-search" placeholder="Search..." ng-model="vm.searchQuery" ng-change="vm.onSearch()" />
+            <button class="vv-btn" ng-click="vm.cycleLayout()">⚡ {{vm.layouts[vm.currentLayout]}}</button>
+            <button class="vv-btn" ng-click="vm.fitGraph()">◎ Fit</button>
+            <button class="vv-btn" ng-class="{'active': vm.showLabels}" ng-click="vm.toggleLabels()">◉ Labels</button>
+            <button class="vv-btn" ng-click="vm.refreshGraph()">↻ Refresh</button>
+            <button class="vv-btn vv-btn-add" ng-click="vm.openAddObservable()">+ Observable</button>
+        </div>
+    </div>
+
+    <div class="vv-body">
+        <!-- Graph Canvas -->
+        <div id="cy-container">
+            <!-- Loading -->
+            <div class="vv-loading" ng-if="vm.loading">
+                <div class="spinner"></div>
+                <div>Loading case graph...</div>
+            </div>
+            <!-- Error -->
+            <div class="vv-error" ng-if="vm.error && !vm.loading">
+                <i class="fa fa-exclamation-triangle" style="font-size:28px; margin-bottom:8px;"></i>
+                <div>{{vm.error}}</div>
+                <button class="vv-btn" style="margin-top:12px" ng-click="vm.refreshGraph()">↻ Retry</button>
+            </div>
+        </div>
+
+        <!-- Detail Sidebar (with data) -->
+        <div class="vv-sidebar" ng-if="vm.selectedNode">
+            <div class="sb-title">
+                <span ng-style="{'color': vm.selectedNode.data.color}">●</span>
+                {{vm.selectedNode.data.label}}
+            </div>
+            <span class="sb-tag" ng-style="{'background': 'rgba(6,182,212,0.15)', 'color': vm.selectedNode.data.color}">
+                {{vm.selectedNode.data.nodeType}}
+            </span>
+
+            <!-- Observable details -->
+            <div ng-if="vm.selectedNode.data.nodeType === 'observable'">
+                <div class="sb-section">
+                    <h5>Details</h5>
+                    <div class="sb-row"><span class="lbl">Type</span><span class="val">{{vm.selectedNode.data.dataType}}</span></div>
+                    <div class="sb-row"><span class="lbl">IOC</span><span class="val" ng-style="{'color': vm.selectedNode.data.ioc ? '#ef4444' : '#22c55e'}">{{vm.selectedNode.data.ioc ? 'YES' : 'No'}}</span></div>
+                    <div class="sb-row"><span class="lbl">TLP</span><span class="val">{{vm.selectedNode.data.tlp}}</span></div>
+                    <div class="sb-row" ng-if="vm.selectedNode.data.sightings"><span class="lbl">Sightings</span><span class="val" style="color:#ef4444">{{vm.selectedNode.data.sightings}}</span></div>
+                </div>
+                <div class="sb-section" ng-if="vm.selectedNode.data.tags.length">
+                    <h5>Tags</h5>
+                    <div class="sb-tag-list">
+                        <span class="sb-tag-item" ng-repeat="t in vm.selectedNode.data.tags">{{t}}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Case details -->
+            <div ng-if="vm.selectedNode.data.nodeType === 'case'">
+                <div class="sb-section">
+                    <h5>Case Details</h5>
+                    <div class="sb-row"><span class="lbl">Status</span><span class="val">{{vm.selectedNode.data.status}}</span></div>
+                    <div class="sb-row"><span class="lbl">Severity</span><span class="val">{{vm.selectedNode.data.severity}}</span></div>
+                    <div class="sb-row"><span class="lbl">Owner</span><span class="val">{{vm.selectedNode.data.owner || 'Unassigned'}}</span></div>
+                    <div class="sb-row"><span class="lbl">Created</span><span class="val">{{vm.selectedNode.data.created | date:'medium'}}</span></div>
+                </div>
+                <div class="sb-section" ng-if="vm.selectedNode.data.description">
+                    <h5>Description</h5>
+                    <p>{{vm.selectedNode.data.description}}</p>
+                </div>
+            </div>
+
+            <!-- Task details -->
+            <div ng-if="vm.selectedNode.data.nodeType === 'task'">
+                <div class="sb-section">
+                    <h5>Task Details</h5>
+                    <div class="sb-row"><span class="lbl">Status</span><span class="val">{{vm.selectedNode.data.taskStatus}}</span></div>
+                    <div class="sb-row"><span class="lbl">Group</span><span class="val">{{vm.selectedNode.data.group || 'Default'}}</span></div>
+                    <div class="sb-row"><span class="lbl">Assignee</span><span class="val">{{vm.selectedNode.data.assignee || 'Unassigned'}}</span></div>
+                </div>
+            </div>
+
+            <!-- TTP details -->
+            <div ng-if="vm.selectedNode.data.nodeType === 'ttp'">
+                <div class="sb-section">
+                    <h5>MITRE ATT&CK</h5>
+                    <div class="sb-row"><span class="lbl">Tactic</span><span class="val">{{vm.selectedNode.data.tactic}}</span></div>
+                    <div class="sb-row" ng-if="vm.selectedNode.data.description"><span class="lbl">Name</span><span class="val">{{vm.selectedNode.data.description}}</span></div>
+                </div>
+            </div>
+
+            <!-- Artifact details -->
+            <div ng-if="vm.selectedNode.data.nodeType === 'artifact'">
+                <div class="sb-section">
+                    <h5>Evidence</h5>
+                    <div class="sb-row"><span class="lbl">Type</span><span class="val">{{vm.selectedNode.data.contentType}}</span></div>
+                    <div class="sb-row" ng-if="vm.selectedNode.data.sha256"><span class="lbl">SHA-256</span><span class="val" style="font-size:8px; word-break:break-all">{{vm.selectedNode.data.sha256}}</span></div>
+                </div>
+            </div>
+
+            <!-- Linked case -->
+            <div ng-if="vm.selectedNode.data.nodeType === 'linked-case'">
+                <div class="sb-section">
+                    <h5>Linked Case</h5>
+                    <div class="sb-row"><span class="lbl">Status</span><span class="val">{{vm.selectedNode.data.status}}</span></div>
+                    <a class="vv-btn" ui-sref="app.graph({caseId: vm.selectedNode.data.caseId})" style="margin-top:8px; display:inline-block">Open Graph →</a>
+                </div>
+            </div>
+
+            <!-- Connections -->
+            <div class="sb-section" ng-if="vm.selectedNode.outgoing.length || vm.selectedNode.incoming.length">
+                <h5>Connections ({{vm.selectedNode.outgoing.length + vm.selectedNode.incoming.length}})</h5>
+                <ul class="sb-conn-list">
+                    <li ng-repeat="c in vm.selectedNode.outgoing"><span class="arrow">→</span> {{c.target}} <span class="conn-label">{{c.label}}</span></li>
+                    <li ng-repeat="c in vm.selectedNode.incoming"><span class="arrow">←</span> {{c.source}} <span class="conn-label">{{c.label}}</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Empty Sidebar -->
+        <div class="vv-sidebar empty" ng-if="!vm.selectedNode">
+            <i class="fa fa-mouse-pointer"></i>
+            <h4>Select a node</h4>
+            <p>Click any node to view its details, connections, and metadata.</p>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="vv-legend" ng-if="!vm.loading && !vm.error">
+        <h5>Node Types</h5>
+        <div class="vv-legend-item"><div class="vv-legend-dot" style="background:#f59e0b"></div> Case</div>
+        <div class="vv-legend-item"><div class="vv-legend-dot" style="background:#06b6d4"></div> Observable</div>
+        <div class="vv-legend-item"><div class="vv-legend-dot" style="background:#a855f7"></div> Task</div>
+        <div class="vv-legend-item"><div class="vv-legend-dot" style="background:#ec4899"></div> TTP</div>
+        <div class="vv-legend-item"><div class="vv-legend-dot" style="background:#22c55e"></div> Linked Case</div>
+        <div class="vv-legend-item"><div class="vv-legend-dot" style="background:#3b82f6"></div> Evidence</div>
+        <div class="vv-legend-item"><div class="vv-legend-dot" style="background:#64748b"></div> Alert Source</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="vv-stats" ng-if="!vm.loading && !vm.error">
+        <div class="vv-stat"><span class="num">{{vm.stats.nodes}}</span> nodes</div>
+        <div class="vv-stat"><span class="num">{{vm.stats.edges}}</span> edges</div>
+        <div class="vv-stat"><span class="num">{{vm.stats.observables}}</span> IOCs</div>
+        <div class="vv-stat"><span class="num">{{vm.stats.tasks}}</span> tasks</div>
+        <div class="vv-stat"><span class="num">{{vm.stats.ttps}}</span> TTPs</div>
+    </div>
+
+    <!-- Add Observable Modal -->
+    <div class="vv-modal-overlay" ng-if="vm.showAddObservable">
+        <div class="vv-modal">
+            <h4>Add Observable</h4>
+            <label>Data Type</label>
+            <select ng-model="vm.obsForm.dataType">
+                <option value="ip">IP Address</option>
+                <option value="domain">Domain</option>
+                <option value="url">URL</option>
+                <option value="mail">Email</option>
+                <option value="hash">Hash</option>
+                <option value="filename">Filename</option>
+                <option value="fqdn">FQDN</option>
+                <option value="registry">Registry Key</option>
+                <option value="user-agent">User Agent</option>
+                <option value="other">Other</option>
+            </select>
+            <label>Value</label>
+            <input type="text" ng-model="vm.obsForm.data" placeholder="e.g. 192.168.1.100" />
+            <label>TLP</label>
+            <select ng-model="vm.obsForm.tlp">
+                <option value="0">0 — Clear</option>
+                <option value="1">1 — Green</option>
+                <option value="2">2 — Amber</option>
+                <option value="3">3 — Red</option>
+            </select>
+            <label>Tags (comma-separated)</label>
+            <input type="text" ng-model="vm.obsForm.tags" placeholder="e.g. malware, c2" />
+            <div class="vv-checkbox">
+                <input type="checkbox" ng-model="vm.obsForm.ioc" id="ioc-check" />
+                <label for="ioc-check">Mark as IOC (Indicator of Compromise)</label>
+            </div>
+            <div class="vv-modal-actions">
+                <button class="vv-btn" ng-click="vm.showAddObservable = false">Cancel</button>
+                <button class="vv-btn vv-btn-add" ng-click="vm.saveObservable()">Add Observable</button>
+            </div>
+        </div>
+    </div>
+</div>

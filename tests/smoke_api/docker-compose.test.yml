@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  neuralvyuha:
+    image: ${NEURALVYUHA_IMAGE:-neuralvyuha:test}
+    ports:
+      - "9000:9000"
+    environment:
+      - TH_SECRET=testsecret12345678901234567890123456789012345678901234567890

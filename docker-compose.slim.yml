@@ -1,0 +1,442 @@
+version: '3.8'
+
+services:
+  # === Data Plane ===
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v23.3.6
+    container_name: nv-redpanda
+    command:
+      - redpanda start
+      - --smp 1
+      - --memory 1G
+      - --reserve-memory 0M
+      - --overprovisioned
+      - --node-id 0
+      - --check=false
+      - --kafka-addr PLAINTEXT://0.0.0.0:29092,OUTSIDE://0.0.0.0:9092
+      - --advertise-kafka-addr PLAINTEXT://redpanda:29092,OUTSIDE://localhost:9092
+    ports:
+      - "9092:9092"
+      - "8081:8081"
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+    networks:
+      - nv-mesh
+    healthcheck:
+      test: [ "CMD-SHELL", "rpk cluster health | grep -q 'Healthy'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: nv-redis
+    command: [ "redis-server", "--appendonly", "yes" ]
+    volumes:
+      - redis-data:/data
+    networks:
+      - nv-mesh
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: nv-postgres
+    environment:
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - nv-mesh
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U nv_user -d nv_vault" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: nv-opensearch
+    environment:
+      - cluster.name=nv-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - DISABLE_SECURITY_PLUGIN=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - nv-mesh
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === Evidence Vault (MinIO) ===
+  minio:
+    image: minio/minio:RELEASE.2024-03-15T01-07-19Z
+    container_name: nv-minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=nvadmin
+      - MINIO_ROOT_PASSWORD=nvadmin123
+      - MINIO_BROWSER=off
+    volumes:
+      - minio-data:/data
+    networks:
+      - nv-mesh
+    # No external ports — only reachable inside nv-mesh by nv-artifact-service
+    healthcheck:
+      test: [ "CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === NeuralVyuha Prime Backend ===
+  nv-ingest:
+    build:
+      context: ./nv-core
+      dockerfile: nv-ingest/Dockerfile
+    container_name: nv-ingest
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=nvadmin
+      - MINIO_SECRET_KEY=nvadmin123
+      - MINIO_BUCKET=nv-archive
+      - MINIO_SECURE=false
+      - BEHAVIORAL_WINDOW=60
+      - BEHAVIORAL_THRESHOLD=10
+      - JWT_SECRET_KEY=prod-secret-change-me
+      - DEV_MODE=true
+    ports:
+      - "8090:8000"
+    networks:
+      - nv-mesh
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  nv-dedup:
+    build:
+      context: ./nv-core
+      dockerfile: nv-dedup/Dockerfile
+    container_name: nv-dedup
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      # Tier 3: The Detective
+      - CORRELATION_THRESHOLD=65
+      - NV_CASE_ENGINE_URL=http://nv-case-engine:8000
+      - NV_CASE_JWT=dev-correlation-jwt
+      - RULE_RELOAD_INTERVAL=60
+      - DEV_MODE=true
+    networks:
+      - nv-mesh
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  nv-correlation:
+    build:
+      context: ./nv-core
+      dockerfile: nv-correlation/Dockerfile
+    container_name: nv-correlation
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DEV_MODE=true
+    networks:
+      - nv-mesh
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  nv-indexer:
+    build:
+      context: ./nv-core
+      dockerfile: nv-indexer/Dockerfile
+    container_name: nv-indexer
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - OPENSEARCH_URL=http://opensearch:9200
+    networks:
+      - nv-mesh
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+
+  nv-group-indexer:
+    build:
+      context: ./nv-core
+      dockerfile: nv-group-indexer/Dockerfile
+    container_name: nv-group-indexer
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - OPENSEARCH_URL=http://opensearch:9200
+    networks:
+      - nv-mesh
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+
+  nv-case-engine:
+    build:
+      context: ./nv-core
+      dockerfile: nv-case-engine/Dockerfile
+    container_name: nv-case-engine
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      - JWT_SECRET_KEY=prod-secret-change-me
+      - DEV_MODE=true
+    ports:
+      - "8082:8000"
+    networks:
+      - nv-mesh
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nv-workflow:
+    build:
+      context: ./nv-core
+      dockerfile: nv-workflow/Dockerfile
+    container_name: nv-workflow
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET_KEY=prod-secret-change-me
+      - NV_CASE_ENGINE_URL=http://nv-case-engine:8000
+      - DEV_MODE=true
+    ports:
+      - "8086:8000"
+    networks:
+      - nv-mesh
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  nv-query:
+    build:
+      context: ./nv-core
+      dockerfile: nv-query/Dockerfile
+    container_name: nv-query
+    environment:
+      - OPENSEARCH_URL=http://opensearch:9200
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      - NV_INGEST_URL=http://nv-ingest:8000
+      - JWT_SECRET_KEY=prod-secret-change-me
+      - DEV_MODE=true
+    ports:
+      - "8000:8000"
+    networks:
+      - nv-mesh
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  # === NeuralVyuha UI ===
+  nv-ui:
+    build: ./nv-ui
+    container_name: nv-ui
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nv-ui/app:/srv
+      - ./nv-ui/bower_components:/srv/bower_components
+    environment:
+      - NV_API_URL=http://nv-query:8000
+
+      - NV_ARTIFACT_URL=http://nv-artifact-service:8000
+    networks:
+      - nv-mesh
+    depends_on:
+      - nv-query
+      - nv-artifact-service
+
+  nv-artifact-service:
+    build:
+      context: ./nv-core
+      dockerfile: artifact-service/Dockerfile
+    container_name: nv-artifact-service
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=nvadmin
+      - MINIO_SECRET_KEY=nvadmin123
+      - JWT_SECRET_KEY=prod-secret-change-me
+      - DEV_MODE=true
+    ports:
+      - "8083:8000"
+    networks:
+      - nv-mesh
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  nv-socket-service:
+    build:
+      context: ./nv-core
+      dockerfile: socket-service/Dockerfile
+    container_name: nv-socket-service
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=redpanda:29092
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET_KEY=prod-secret-change-me
+      - DEV_MODE=true
+      - PING_INTERVAL_SECONDS=25
+    ports:
+      - "8084:8000"
+    networks:
+      - nv-mesh
+    depends_on:
+      redpanda:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # === Phase Z2.1: Node Manager (Cortex / MISP Integration Hub) ===
+  nv-node-service:
+    build:
+      context: ./nv-core
+      dockerfile: node-service/Dockerfile
+    container_name: nv-node-service
+    environment:
+      # DEV KEY only — generate a real key for production with Fernet.generate_key()
+      - NODE_MASTER_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET_KEY=prod-secret-change-me
+      - DEV_MODE=true
+    ports:
+      - "8085:8085"
+    networks:
+      - nv-mesh
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8085/healthz\")' || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # === Phase Z3: Threat Copilot (MCP AI Server) ===
+  nv-mcp-server:
+    build:
+      context: ./nv-core
+      dockerfile: nv-mcp-server/Dockerfile
+    container_name: nv-mcp-server
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=nv_user
+      - POSTGRES_PASSWORD=nv_pass
+      - POSTGRES_DB=nv_vault
+      - OPENSEARCH_URL=http://opensearch:9200
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - NODE_SERVICE_URL=http://nv-node-service:8085
+      - JWT_SECRET_KEY=prod-secret-change-me
+      - DEV_MODE=true
+    ports:
+      - "8087:8087"
+    networks:
+      - nv-mesh
+    depends_on:
+      postgres:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8087/healthz\")' || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+
+volumes:
+  redpanda-data:
+  redis-data:
+  postgres-data:
+  opensearch-data:
+  minio-data:
+
+
+networks:
+  nv-mesh:
+    driver: bridge

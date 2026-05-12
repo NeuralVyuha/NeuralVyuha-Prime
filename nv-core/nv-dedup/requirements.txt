@@ -1,0 +1,11 @@
+kafka-python
+redis
+pydantic
+python-dotenv
+psycopg2-binary==2.9.9
+prometheus-client
+requests
+httpx
+cryptography
+pyjwt
+cel-python
