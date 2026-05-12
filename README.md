@@ -41,7 +41,7 @@ This will start Redpanda (Kafka), Redis, Postgres, OpenSearch, and hot-reload al
 ### Documentation & Contribution
 Detailed architectural documentation and the system blueprint can be found in our comprehensive agents guide:
 *   [Agents Guide & Architecture](agents.md)
-*   [Working Flow Diagram & Process](workingflow.ms)
+*   [Working Flow Diagram & Process](workingflow.md)
 
 If you'd like to contribute, please read our contribution guidelines:
 *   [Contributing to NeuralVyuha](CONTRIBUTING.md)
